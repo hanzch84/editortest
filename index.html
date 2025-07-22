@@ -426,7 +426,7 @@ $$</textarea>
         const clearBtn = document.getElementById('clearBtn');
         const sampleBtn = document.getElementById('sampleBtn');
         
-        // 마크다운을 HTML로 변환
+        // 개선된 마크다운을 HTML로 변환
         function renderMarkdown(markdown) {
             const mathBlocks = [];
             const inlineMaths = [];
@@ -445,18 +445,152 @@ $$</textarea>
                 return `__INLINE_MATH_${index}__`;
             });
             
-            // 마크다운 파싱
-            let html = markdown
-                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`([^`]*)`/g, '<code>$1</code>')
-                .replace(/\n\s*\n/g, '</p><p>')
-                .replace(/\n/g, '<br>');
+            // 줄별로 처리
+            const lines = markdown.split('\n');
+            const htmlLines = [];
+            let inCodeBlock = false;
+            let inList = false;
+            let currentParagraph = '';
             
-            html = '<p>' + html + '</p>';
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmedLine = line.trim();
+                
+                // 코드 블록 처리
+                if (trimmedLine.startsWith('```')) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${currentParagraph}</p>`);
+                        currentParagraph = '';
+                    }
+                    inCodeBlock = !inCodeBlock;
+                    if (inCodeBlock) {
+                        const lang = trimmedLine.substring(3).trim();
+                        htmlLines.push(`<pre><code class="language-${lang}">`);
+                    } else {
+                        htmlLines.push('</code></pre>');
+                    }
+                    continue;
+                }
+                
+                if (inCodeBlock) {
+                    htmlLines.push(line);
+                    continue;
+                }
+                
+                // 빈 줄 처리
+                if (trimmedLine === '') {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    inList = false;
+                    continue;
+                }
+                
+                // 제목 처리
+                if (trimmedLine.startsWith('### ')) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    htmlLines.push(`<h3>${processInlineElements(trimmedLine.substring(4))}</h3>`);
+                    inList = false;
+                    continue;
+                }
+                
+                if (trimmedLine.startsWith('## ')) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    htmlLines.push(`<h2>${processInlineElements(trimmedLine.substring(3))}</h2>`);
+                    inList = false;
+                    continue;
+                }
+                
+                if (trimmedLine.startsWith('# ')) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    htmlLines.push(`<h1>${processInlineElements(trimmedLine.substring(2))}</h1>`);
+                    inList = false;
+                    continue;
+                }
+                
+                // 리스트 처리
+                if (trimmedLine.match(/^[-*+]\s/)) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    if (!inList) {
+                        htmlLines.push('<ul>');
+                        inList = true;
+                    }
+                    htmlLines.push(`<li>${processInlineElements(trimmedLine.substring(2))}</li>`);
+                    continue;
+                }
+                
+                if (trimmedLine.match(/^\d+\.\s/)) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    if (!inList) {
+                        htmlLines.push('<ol>');
+                        inList = true;
+                    }
+                    const match = trimmedLine.match(/^\d+\.\s(.*)$/);
+                    htmlLines.push(`<li>${processInlineElements(match[1])}</li>`);
+                    continue;
+                }
+                
+                // 인용문 처리
+                if (trimmedLine.startsWith('> ')) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    htmlLines.push(`<blockquote><p>${processInlineElements(trimmedLine.substring(2))}</p></blockquote>`);
+                    inList = false;
+                    continue;
+                }
+                
+                // 수평선 처리
+                if (trimmedLine.match(/^-{3,}$/) || trimmedLine.match(/^\*{3,}$/)) {
+                    if (currentParagraph) {
+                        htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+                        currentParagraph = '';
+                    }
+                    htmlLines.push('<hr>');
+                    inList = false;
+                    continue;
+                }
+                
+                // 일반 텍스트 (문단)
+                if (inList) {
+                    htmlLines.push('</ul>');
+                    inList = false;
+                }
+                
+                if (currentParagraph) {
+                    currentParagraph += ' ' + trimmedLine;
+                } else {
+                    currentParagraph = trimmedLine;
+                }
+            }
+            
+            // 마지막 문단 처리
+            if (currentParagraph) {
+                htmlLines.push(`<p>${processInlineElements(currentParagraph)}</p>`);
+            }
+            
+            if (inList) {
+                htmlLines.push('</ul>');
+            }
+            
+            let html = htmlLines.join('\n');
             
             // 수식 복원
             html = html.replace(/__MATH_BLOCK_(\d+)__/g, (match, index) => {
@@ -482,6 +616,25 @@ $$</textarea>
             });
             
             return html;
+        }
+        
+        // 인라인 요소 처리 (굵은 글씨, 이탤릭, 코드 등)
+        function processInlineElements(text) {
+            return text
+                // 굵은 글씨
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/__(.*?)__/g, '<strong>$1</strong>')
+                // 이탤릭
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/_(.*?)_/g, '<em>$1</em>')
+                // 인라인 코드
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // 링크
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                // 이미지
+                .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;">')
+                // 취소선
+                .replace(/~~(.*?)~~/g, '<del>$1</del>');
         }
         
         // 미리보기 업데이트
