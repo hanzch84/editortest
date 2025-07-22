@@ -278,7 +278,7 @@
     
     <div class="container">
         <div class="toolbar">
-            <button class="btn active" id="startBtn">🚀 StackEdit 시작</button>
+            <button class="btn" id="startBtn">🔄 재시작</button>
             <button class="btn" id="refreshBtn">🔄 새로고침</button>
             <button class="btn" id="fullscreenBtn">⛶ 전체화면</button>
             <button class="btn" id="themeBtn">🎨 다크모드</button>
@@ -293,11 +293,8 @@
             <div class="stackedit-wrapper">
                 <div class="loading-screen" id="loadingScreen">
                     <div class="loading-spinner"></div>
-                    <h3 style="margin: 20px 0 10px 0; color: #667eea;">StackEdit 로딩 중...</h3>
-                    <p style="margin: 0; color: #64748b; font-size: 14px;">"StackEdit 시작" 버튼을 클릭하세요</p>
-                    <button class="btn" onclick="document.getElementById('startBtn').click()" style="margin-top: 15px;">
-                        🚀 지금 시작하기
-                    </button>
+                    <h3 style="margin: 20px 0 10px 0; color: #667eea;">StackEdit 자동 로딩 중...</h3>
+                    <p style="margin: 0; color: #64748b; font-size: 14px;">잠시만 기다려주세요</p>
                 </div>
             </div>
         </div>
@@ -306,20 +303,20 @@
             <h3>⚡ 빠른 시작 가이드</h3>
             <div class="quick-start-grid">
                 <div class="quick-start-item">
-                    <h4>🎯 1단계</h4>
-                    <p>"StackEdit 시작" 클릭하여 에디터 로드</p>
+                    <h4>⚡ 자동 로딩</h4>
+                    <p>페이지 로드와 함께 StackEdit이 자동 시작</p>
                 </div>
                 <div class="quick-start-item">
-                    <h4>📝 2단계</h4>
+                    <h4>📝 즉시 편집</h4>
                     <p>왼쪽에서 마크다운 편집, 오른쪽에서 미리보기</p>
                 </div>
                 <div class="quick-start-item">
-                    <h4>🧮 3단계</h4>
+                    <h4>🧮 고급 기능</h4>
                     <p>수학 공식과 다이어그램 자유롭게 사용</p>
                 </div>
                 <div class="quick-start-item">
-                    <h4>💾 4단계</h4>
-                    <p>파일 메뉴에서 저장 및 내보내기</p>
+                    <h4>💾 파일 관리</h4>
+                    <p>파일 메뉴에서 저장, 동기화, 내보내기</p>
                 </div>
             </div>
         </div>
@@ -358,15 +355,15 @@
                 this.loadingScreen = document.getElementById('loadingScreen');
                 
                 this.setupEventListeners();
-                this.checkExistingSession();
+                // 자동으로 StackEdit 시작
+                this.autoStartStackEdit();
             }
             
-            checkExistingSession() {
-                // 기존 StackEdit 세션이 있는지 확인하고 자동 로드 옵션 제공
-                const hasSession = localStorage.getItem('stackedit-session');
-                if (hasSession) {
-                    this.updateStatus('이전 세션 발견됨');
-                }
+            autoStartStackEdit() {
+                // 페이지 로드 1초 후 자동으로 StackEdit 시작
+                setTimeout(() => {
+                    this.startStackEdit();
+                }, 1000);
             }
             
             setupEventListeners() {
@@ -445,7 +442,7 @@
                     
                     // 버튼 상태 변경
                     const startBtn = document.getElementById('startBtn');
-                    startBtn.textContent = '✅ 로드됨';
+                    startBtn.textContent = '✅ 로드 완료';
                     startBtn.classList.add('active');
                     
                 } catch (error) {
