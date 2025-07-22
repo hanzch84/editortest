@@ -361,12 +361,6 @@ $$
 정규분포의 확률밀도함수:
 $$
 f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
-$$
-
-### 6. 수론
-리만 제타 함수:
-$$
-\zeta(s) = \sum_{n=1}^{\infty} \frac{1}{n^s} = \prod_{p} \frac{1}{1-p^{-s}}
 $$</textarea>
                 </div>
                 
@@ -407,30 +401,6 @@ $$</textarea>
                     <strong>연립방정식</strong>
                     <code>$$\begin{cases} x + y = 5 \\ x - y = 1 \end{cases}$$</code>
                 </div>
-                <div class="formula-item" data-formula="$$\int_a^b f(x) \, dx = F(b) - F(a)$$">
-                    <strong>정적분의 기본정리</strong>
-                    <code>$$\int_a^b f(x) \, dx = F(b) - F(a)$$</code>
-                </div>
-                <div class="formula-item" data-formula="$$\det\begin{pmatrix} a & b \\ c & d \end{pmatrix} = ad - bc$$">
-                    <strong>2×2 행렬식</strong>
-                    <code>$$\det\begin{pmatrix} a & b \\ c & d \end{pmatrix} = ad - bc$$</code>
-                </div>
-                <div class="formula-item" data-formula="$$\nabla \cdot \mathbf{F} = \frac{\partial F_x}{\partial x} + \frac{\partial F_y}{\partial y} + \frac{\partial F_z}{\partial z}$$">
-                    <strong>발산(Divergence)</strong>
-                    <code>$$\nabla \cdot \mathbf{F} = \frac{\partial F_x}{\partial x} + \frac{\partial F_y}{\partial y} + \frac{\partial F_z}{\partial z}$$</code>
-                </div>
-                <div class="formula-item" data-formula="$$e^{i\theta} = \cos\theta + i\sin\theta$$">
-                    <strong>오일러 공식</strong>
-                    <code>$$e^{i\theta} = \cos\theta + i\sin\theta$$</code>
-                </div>
-                <div class="formula-item" data-formula="$$\frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}} dx = 1$$">
-                    <strong>가우스 적분</strong>
-                    <code>$$\frac{1}{\sqrt{2\pi}} \int_{-\infty}^{\infty} e^{-\frac{x^2}{2}} dx = 1$$</code>
-                </div>
-                <div class="formula-item" data-formula="$$\begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$$">
-                    <strong>회전 행렬</strong>
-                    <code>$$\begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$$</code>
-                </div>
             </div>
         </div>
     </div>
@@ -443,8 +413,10 @@ $$</textarea>
     <script src="https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor-all.min.js"></script>
     
     <script>
-        let editor;
+        // 전역 변수
+        let editor = null;
         let currentMode = 'split';
+        let isScrolling = false;
         
         // DOM 요소들
         const markdownInput = document.getElementById('markdownInput');
@@ -456,18 +428,17 @@ $$</textarea>
         
         // 마크다운을 HTML로 변환
         function renderMarkdown(markdown) {
-            // 수식 블록과 인라인 수식을 임시로 보호
             const mathBlocks = [];
             const inlineMaths = [];
             
-            // 블록 수식 보호 ($$...$$)
+            // 블록 수식 보호
             markdown = markdown.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
                 const index = mathBlocks.length;
                 mathBlocks.push(content.trim());
                 return `__MATH_BLOCK_${index}__`;
             });
             
-            // 인라인 수식 보호 ($...$)
+            // 인라인 수식 보호
             markdown = markdown.replace(/\$([^$\n]+)\$/g, (match, content) => {
                 const index = inlineMaths.length;
                 inlineMaths.push(content.trim());
@@ -485,7 +456,6 @@ $$</textarea>
                 .replace(/\n\s*\n/g, '</p><p>')
                 .replace(/\n/g, '<br>');
             
-            // p 태그로 감싸기
             html = '<p>' + html + '</p>';
             
             // 수식 복원
@@ -493,17 +463,10 @@ $$</textarea>
                 try {
                     return katex.renderToString(mathBlocks[index], {
                         displayMode: true,
-                        throwOnError: false,
-                        macros: {
-                            "\\RR": "\\mathbb{R}",
-                            "\\NN": "\\mathbb{N}",
-                            "\\ZZ": "\\mathbb{Z}",
-                            "\\QQ": "\\mathbb{Q}",
-                            "\\CC": "\\mathbb{C}"
-                        }
+                        throwOnError: false
                     });
                 } catch (e) {
-                    return `<div class="math-error">KaTeX Error: ${e.message}</div>`;
+                    return `<div class="math-error">Math Error: ${e.message}</div>`;
                 }
             });
             
@@ -511,14 +474,7 @@ $$</textarea>
                 try {
                     return katex.renderToString(inlineMaths[index], {
                         displayMode: false,
-                        throwOnError: false,
-                        macros: {
-                            "\\RR": "\\mathbb{R}",
-                            "\\NN": "\\mathbb{N}",
-                            "\\ZZ": "\\mathbb{Z}",
-                            "\\QQ": "\\mathbb{Q}",
-                            "\\CC": "\\mathbb{C}"
-                        }
+                        throwOnError: false
                     });
                 } catch (e) {
                     return `<span class="math-error">Math Error: ${e.message}</span>`;
@@ -528,10 +484,15 @@ $$</textarea>
             return html;
         }
         
-        // 스크롤 동기화 변수
-        let isScrolling = false;
+        // 미리보기 업데이트
+        function updatePreview() {
+            if (currentMode !== 'split') return;
+            const markdown = markdownInput.value;
+            const html = renderMarkdown(markdown);
+            previewOutput.innerHTML = html;
+        }
         
-        // 스크롤 동기화 함수
+        // 스크롤 동기화
         function syncScroll(source, target) {
             if (isScrolling) return;
             isScrolling = true;
@@ -550,33 +511,7 @@ $$</textarea>
             }, 50);
         }
         
-        // 분할 화면 업데이트 (스크롤 동기화 포함)
-        function updatePreview() {
-            if (currentMode !== 'split') return;
-            
-            const markdown = markdownInput.value;
-            const html = renderMarkdown(markdown);
-            previewOutput.innerHTML = html;
-        }
-        
-        // 스크롤 이벤트 리스너 설정
-        function setupScrollSync() {
-            // 입력 영역 스크롤시 미리보기 동기화
-            markdownInput.addEventListener('scroll', () => {
-                if (currentMode === 'split') {
-                    syncScroll(markdownInput, previewOutput);
-                }
-            });
-            
-            // 미리보기 영역 스크롤시 입력 동기화
-            previewOutput.addEventListener('scroll', () => {
-                if (currentMode === 'split') {
-                    syncScroll(previewOutput, markdownInput);
-                }
-            });
-        }
-        
-        // Toast UI Editor 초기화 (에러 방지)
+        // Toast UI Editor 초기화
         function initToastEditor() {
             if (editor) return;
             
@@ -586,219 +521,37 @@ $$</textarea>
                     height: '600px',
                     initialEditType: 'markdown',
                     previewStyle: 'vertical',
-                    initialValue: markdownInput.value,
-                    hooks: {
-                        addImageBlobHook: (blob, callback) => {
-                            // 이미지 업로드 비활성화
-                            callback('', '');
-                        }
-                    },
-                    events: {
-                        // 에디터 내용 변경시 KaTeX 렌더링
-                        change: () => {
-                            setTimeout(() => {
-                                renderKatexInToastEditor();
-                            }, 100);
-                        }
-                    }
+                    initialValue: markdownInput.value
                 });
                 
-                // 초기 KaTeX 렌더링
                 setTimeout(() => {
                     renderKatexInToastEditor();
                 }, 500);
                 
             } catch (error) {
-                console.error('Toast UI Editor 초기화 실패:', error);
-                alert('Toast UI Editor 로딩에 실패했습니다. 분할 화면 모드를 사용해주세요.');
+                console.error('Toast UI Editor error:', error);
+                alert('Toast UI Editor를 로드할 수 없습니다. 분할 화면 모드를 사용해주세요.');
                 switchMode('split');
             }
         }
         
-        // Toast UI Editor에서 KaTeX 렌더링
+        // Toast UI Editor KaTeX 렌더링
         function renderKatexInToastEditor() {
-            const previewElement = document.querySelector('#toastEditor .toastui-editor-md-preview');
-            if (previewElement) {
-                renderMathInElement(previewElement, {
-                    delimiters: [
-                        {left: '$', right: '$', display: true},
-                        {left: '
-        
-        // 모드 전환
-        function switchMode(mode) {
-            currentMode = mode;
-            document.body.className = mode === 'toast' ? 'toast-editor-mode' : '';
-            
-            if (mode === 'split') {
-                splitModeBtn.classList.add('active');
-                toastModeBtn.classList.remove('active');
-                updatePreview();
-            } else {
-                toastModeBtn.classList.add('active');
-                splitModeBtn.classList.remove('active');
-                
-                // Toast UI Editor 초기화 및 설정
-                if (!editor) {
-                    initToastEditor();
-                } else {
-                    // 기존 에디터가 있으면 내용 동기화
-                    editor.setMarkdown(markdownInput.value);
-                    setTimeout(() => {
-                        renderKatexInToastEditor();
-                    }, 200);
+            try {
+                const previewElement = document.querySelector('#toastEditor .toastui-editor-md-preview');
+                if (previewElement && window.renderMathInElement) {
+                    renderMathInElement(previewElement, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
                 }
+            } catch (error) {
+                console.error('KaTeX rendering error:', error);
             }
         }
-        
-        // 샘플 데이터 로드
-        function loadSample() {
-            const sampleContent = `# 🧮 고급 수학 공식 모음
-
-## 📐 기하학과 삼각법
-
-### 피타고라스 정리
-직각삼각형에서: $a^2 + b^2 = c^2$
-
-### 삼각함수의 덧셈 공식
-$\\sin(A + B) = \\sin A \\cos B + \\cos A \\sin B$
-$\\cos(A + B) = \\cos A \\cos B - \\sin A \\sin B$
-
-## 📊 미적분학
-
-### 라이프니츠 적분 규칙
-$\\frac{d}{dx} \\int_{a(x)}^{b(x)} f(x,t) \\, dt = f(x,b(x))b'(x) - f(x,a(x))a'(x) + \\int_{a(x)}^{b(x)} \\frac{\\partial f}{\\partial x}(x,t) \\, dt$
-
-### 테일러 급수
-$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$
-
-### 스토크스 정리
-$\\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F}) \\cdot d\\mathbf{S}$
-
-## 🌊 물리학
-
-### 슈뢰딩거 방정식
-$i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)$
-
-### 맥스웰 방정식
-$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}$
-$\\nabla \\cdot \\mathbf{B} = 0$
-$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$
-$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\epsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$
-
-## 🔢 선형대수
-
-### 고유값 문제
-$\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$
-
-### 3×3 행렬의 역행렬
-$\\mathbf{A}^{-1} = \\frac{1}{\\det(\\mathbf{A})} \\text{adj}(\\mathbf{A})$
-
-## 📈 확률론과 통계
-
-### 베이즈 정리
-$P(A|B) = \\frac{P(B|A)P(A)}{P(B)}$
-
-### 중심극한정리
-$\\frac{\\bar{X}_n - \\mu}{\\sigma/\\sqrt{n}} \\xrightarrow{d} \\mathcal{N}(0,1)$
-
-## 🎲 조합론
-
-### 이항정리
-$(x + y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{n-k} y^k$
-
-### 스털링 근사
-$n! \\approx \\sqrt{2\\pi n} \\left(\\frac{n}{e}\\right)^n$`;
-
-            markdownInput.value = sampleContent;
-            if (currentMode === 'split') {
-                updatePreview();
-            } else if (editor) {
-                editor.setMarkdown(sampleContent);
-            }
-        }
-        
-        // 이벤트 리스너들
-        markdownInput.addEventListener('input', updatePreview);
-        splitModeBtn.addEventListener('click', () => switchMode('split'));
-        toastModeBtn.addEventListener('click', () => switchMode('toast'));
-        
-        // 스크롤 동기화 설정
-        setupScrollSync();
-        
-        clearBtn.addEventListener('click', () => {
-            markdownInput.value = '';
-            if (currentMode === 'split') {
-                updatePreview();
-            } else if (editor) {
-                editor.setMarkdown('');
-                setTimeout(() => {
-                    renderKatexInToastEditor();
-                }, 200);
-            }
-        });
-        
-        sampleBtn.addEventListener('click', () => {
-            loadSample();
-            if (currentMode === 'toast' && editor) {
-                setTimeout(() => {
-                    renderKatexInToastEditor();
-                }, 300);
-            }
-        });
-        
-        // 샘플 공식 클릭 이벤트
-        document.querySelectorAll('.formula-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const formula = item.dataset.formula;
-                const currentValue = currentMode === 'split' ? markdownInput.value : (editor ? editor.getMarkdown() : '');
-                const newValue = currentValue + '\n\n' + formula + '\n';
-                
-                if (currentMode === 'split') {
-                    markdownInput.value = newValue;
-                    updatePreview();
-                } else if (editor) {
-                    editor.setMarkdown(newValue);
-                    // Toast UI Editor에서 KaTeX 렌더링
-                    setTimeout(() => {
-                        renderKatexInToastEditor();
-                    }, 200);
-                }
-                
-                // 클릭 애니메이션
-                item.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    item.style.transform = 'translateY(-3px)';
-                }, 150);
-            });
-        });
-        
-        // GitHub 링크 설정
-        document.querySelector('.github-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            alert('GitHub 저장소 URL을 여기에 설정하세요!');
-        });
-        
-        // 초기 렌더링
-        updatePreview();
-        
-        // 페이지 로드 완료 후 KaTeX 전역 설정
-        document.addEventListener('DOMContentLoaded', () => {
-            // KaTeX 전역 매크로 설정
-            window.katexMacros = {
-                "\\RR": "\\mathbb{R}",
-                "\\NN": "\\mathbb{N}",
-                "\\ZZ": "\\mathbb{Z}",
-                "\\QQ": "\\mathbb{Q}",
-                "\\CC": "\\mathbb{C}",
-                "\\HH": "\\mathbb{H}",
-                "\\PP": "\\mathbb{P}",
-                "\\EE": "\\mathbb{E}",
-                "\\FF": "\\mathbb{F}"
-            };
-        });
-    </script>
-</body>
-</html>, right: '
         
         // 모드 전환
         function switchMode(mode) {
@@ -813,13 +566,10 @@ $n! \\approx \\sqrt{2\\pi n} \\left(\\frac{n}{e}\\right)^n$`;
                 toastModeBtn.classList.add('active');
                 splitModeBtn.classList.remove('active');
                 initToastEditor();
-                if (editor) {
-                    editor.setMarkdown(markdownInput.value);
-                }
             }
         }
         
-        // 샘플 데이터 로드
+        // 샘플 로드
         function loadSample() {
             const sampleContent = `# 🧮 고급 수학 공식 모음
 
@@ -828,290 +578,115 @@ $n! \\approx \\sqrt{2\\pi n} \\left(\\frac{n}{e}\\right)^n$`;
 ### 피타고라스 정리
 직각삼각형에서: $a^2 + b^2 = c^2$
 
-### 삼각함수의 덧셈 공식
+### 삼각함수 덧셈공식
 $$\\sin(A + B) = \\sin A \\cos B + \\cos A \\sin B$$
-$$\\cos(A + B) = \\cos A \\cos B - \\sin A \\sin B$$
 
 ## 📊 미적분학
-
-### 라이프니츠 적분 규칙
-$$\\frac{d}{dx} \\int_{a(x)}^{b(x)} f(x,t) \\, dt = f(x,b(x))b'(x) - f(x,a(x))a'(x) + \\int_{a(x)}^{b(x)} \\frac{\\partial f}{\\partial x}(x,t) \\, dt$$
 
 ### 테일러 급수
 $$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$$
 
-### 스토크스 정리
-$$\\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F}) \\cdot d\\mathbf{S}$$
+### 적분의 기본정리
+$$\\int_a^b f(x) dx = F(b) - F(a)$$
 
 ## 🌊 물리학
 
 ### 슈뢰딩거 방정식
-$$i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)$$
+$$i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi$$
 
 ### 맥스웰 방정식
 $$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}$$
-$$\\nabla \\cdot \\mathbf{B} = 0$$
-$$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$$
-$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\epsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$
 
 ## 🔢 선형대수
 
 ### 고유값 문제
 $$\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$$
 
-### 3×3 행렬의 역행렬
-$$\\mathbf{A}^{-1} = \\frac{1}{\\det(\\mathbf{A})} \\text{adj}(\\mathbf{A})$$
-
-## 📈 확률론과 통계
-
-### 베이즈 정리
-$$P(A|B) = \\frac{P(B|A)P(A)}{P(B)}$$
-
-### 중심극한정리
-$$\\frac{\\bar{X}_n - \\mu}{\\sigma/\\sqrt{n}} \\xrightarrow{d} \\mathcal{N}(0,1)$$
-
-## 🎲 조합론
-
-### 이항정리
-$$(x + y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{n-k} y^k$$
-
-### 스털링 근사
-$$n! \\approx \\sqrt{2\\pi n} \\left(\\frac{n}{e}\\right)^n$$`;
+### 행렬식
+$$\\det\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} = ad - bc$$`;
 
             markdownInput.value = sampleContent;
             if (currentMode === 'split') {
                 updatePreview();
             } else if (editor) {
                 editor.setMarkdown(sampleContent);
+                setTimeout(renderKatexInToastEditor, 200);
             }
         }
         
-        // 이벤트 리스너들
-        markdownInput.addEventListener('input', updatePreview);
-        splitModeBtn.addEventListener('click', () => switchMode('split'));
-        toastModeBtn.addEventListener('click', () => switchMode('toast'));
-        
-        clearBtn.addEventListener('click', () => {
-            markdownInput.value = '';
-            if (currentMode === 'split') {
-                updatePreview();
-            } else if (editor) {
-                editor.setMarkdown('');
-            }
-        });
-        
-        sampleBtn.addEventListener('click', loadSample);
-        
-        // 샘플 공식 클릭 이벤트
-        document.querySelectorAll('.formula-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const formula = item.dataset.formula;
-                const currentValue = currentMode === 'split' ? markdownInput.value : (editor ? editor.getMarkdown() : '');
-                const newValue = currentValue + '\n\n' + formula + '\n';
-                
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 입력 이벤트
+            markdownInput.addEventListener('input', updatePreview);
+            
+            // 버튼 이벤트
+            splitModeBtn.addEventListener('click', () => switchMode('split'));
+            toastModeBtn.addEventListener('click', () => switchMode('toast'));
+            clearBtn.addEventListener('click', () => {
+                markdownInput.value = '';
                 if (currentMode === 'split') {
-                    markdownInput.value = newValue;
                     updatePreview();
                 } else if (editor) {
-                    editor.setMarkdown(newValue);
+                    editor.setMarkdown('');
                 }
-                
-                // 클릭 애니메이션
-                item.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    item.style.transform = 'translateY(-3px)';
-                }, 150);
             });
-        });
-        
-        // GitHub 링크 설정
-        document.querySelector('.github-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            alert('GitHub 저장소 URL을 여기에 설정하세요!');
-        });
-        
-        // 초기 렌더링
-        updatePreview();
-        
-        // 페이지 로드 완료 후 KaTeX 전역 설정
-        document.addEventListener('DOMContentLoaded', () => {
-            // KaTeX 전역 매크로 설정
-            window.katexMacros = {
-                "\\RR": "\\mathbb{R}",
-                "\\NN": "\\mathbb{N}",
-                "\\ZZ": "\\mathbb{Z}",
-                "\\QQ": "\\mathbb{Q}",
-                "\\CC": "\\mathbb{C}",
-                "\\HH": "\\mathbb{H}",
-                "\\PP": "\\mathbb{P}",
-                "\\EE": "\\mathbb{E}",
-                "\\FF": "\\mathbb{F}"
-            };
-        });
-    </script>
-</body>
-</html>, display: false}
-                    ],
-                    throwOnError: false,
-                    macros: {
-                        "\\RR": "\\mathbb{R}",
-                        "\\NN": "\\mathbb{N}",
-                        "\\ZZ": "\\mathbb{Z}",
-                        "\\QQ": "\\mathbb{Q}",
-                        "\\CC": "\\mathbb{C}"
+            sampleBtn.addEventListener('click', loadSample);
+            
+            // 스크롤 동기화
+            markdownInput.addEventListener('scroll', () => {
+                if (currentMode === 'split') {
+                    syncScroll(markdownInput, previewOutput);
+                }
+            });
+            
+            previewOutput.addEventListener('scroll', () => {
+                if (currentMode === 'split') {
+                    syncScroll(previewOutput, markdownInput);
+                }
+            });
+            
+            // 샘플 공식 클릭
+            document.querySelectorAll('.formula-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const formula = item.dataset.formula;
+                    const currentValue = currentMode === 'split' ? markdownInput.value : (editor ? editor.getMarkdown() : '');
+                    const newValue = currentValue + '\\n\\n' + formula + '\\n';
+                    
+                    if (currentMode === 'split') {
+                        markdownInput.value = newValue;
+                        updatePreview();
+                    } else if (editor) {
+                        editor.setMarkdown(newValue);
+                        setTimeout(renderKatexInToastEditor, 200);
                     }
+                    
+                    // 애니메이션
+                    item.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        item.style.transform = 'translateY(-3px)';
+                    }, 150);
                 });
-            }
-        }
-        
-        // 모드 전환
-        function switchMode(mode) {
-            currentMode = mode;
-            document.body.className = mode === 'toast' ? 'toast-editor-mode' : '';
-            
-            if (mode === 'split') {
-                splitModeBtn.classList.add('active');
-                toastModeBtn.classList.remove('active');
-                updatePreview();
-            } else {
-                toastModeBtn.classList.add('active');
-                splitModeBtn.classList.remove('active');
-                initToastEditor();
-                if (editor) {
-                    editor.setMarkdown(markdownInput.value);
-                }
-            }
-        }
-        
-        // 샘플 데이터 로드
-        function loadSample() {
-            const sampleContent = `# 🧮 고급 수학 공식 모음
-
-## 📐 기하학과 삼각법
-
-### 피타고라스 정리
-직각삼각형에서: $a^2 + b^2 = c^2$
-
-### 삼각함수의 덧셈 공식
-$$\\sin(A + B) = \\sin A \\cos B + \\cos A \\sin B$$
-$$\\cos(A + B) = \\cos A \\cos B - \\sin A \\sin B$$
-
-## 📊 미적분학
-
-### 라이프니츠 적분 규칙
-$$\\frac{d}{dx} \\int_{a(x)}^{b(x)} f(x,t) \\, dt = f(x,b(x))b'(x) - f(x,a(x))a'(x) + \\int_{a(x)}^{b(x)} \\frac{\\partial f}{\\partial x}(x,t) \\, dt$$
-
-### 테일러 급수
-$$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$$
-
-### 스토크스 정리
-$$\\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F}) \\cdot d\\mathbf{S}$$
-
-## 🌊 물리학
-
-### 슈뢰딩거 방정식
-$$i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)$$
-
-### 맥스웰 방정식
-$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}$$
-$$\\nabla \\cdot \\mathbf{B} = 0$$
-$$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$$
-$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\epsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$
-
-## 🔢 선형대수
-
-### 고유값 문제
-$$\\mathbf{A}\\mathbf{v} = \\lambda\\mathbf{v}$$
-
-### 3×3 행렬의 역행렬
-$$\\mathbf{A}^{-1} = \\frac{1}{\\det(\\mathbf{A})} \\text{adj}(\\mathbf{A})$$
-
-## 📈 확률론과 통계
-
-### 베이즈 정리
-$$P(A|B) = \\frac{P(B|A)P(A)}{P(B)}$$
-
-### 중심극한정리
-$$\\frac{\\bar{X}_n - \\mu}{\\sigma/\\sqrt{n}} \\xrightarrow{d} \\mathcal{N}(0,1)$$
-
-## 🎲 조합론
-
-### 이항정리
-$$(x + y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{n-k} y^k$$
-
-### 스털링 근사
-$$n! \\approx \\sqrt{2\\pi n} \\left(\\frac{n}{e}\\right)^n$$`;
-
-            markdownInput.value = sampleContent;
-            if (currentMode === 'split') {
-                updatePreview();
-            } else if (editor) {
-                editor.setMarkdown(sampleContent);
-            }
-        }
-        
-        // 이벤트 리스너들
-        markdownInput.addEventListener('input', updatePreview);
-        splitModeBtn.addEventListener('click', () => switchMode('split'));
-        toastModeBtn.addEventListener('click', () => switchMode('toast'));
-        
-        clearBtn.addEventListener('click', () => {
-            markdownInput.value = '';
-            if (currentMode === 'split') {
-                updatePreview();
-            } else if (editor) {
-                editor.setMarkdown('');
-            }
-        });
-        
-        sampleBtn.addEventListener('click', loadSample);
-        
-        // 샘플 공식 클릭 이벤트
-        document.querySelectorAll('.formula-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const formula = item.dataset.formula;
-                const currentValue = currentMode === 'split' ? markdownInput.value : (editor ? editor.getMarkdown() : '');
-                const newValue = currentValue + '\n\n' + formula + '\n';
-                
-                if (currentMode === 'split') {
-                    markdownInput.value = newValue;
-                    updatePreview();
-                } else if (editor) {
-                    editor.setMarkdown(newValue);
-                }
-                
-                // 클릭 애니메이션
-                item.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    item.style.transform = 'translateY(-3px)';
-                }, 150);
             });
-        });
+            
+            // GitHub 링크
+            document.querySelector('.github-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('GitHub 저장소를 설정하세요!');
+            });
+        }
         
-        // GitHub 링크 설정
-        document.querySelector('.github-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            alert('GitHub 저장소 URL을 여기에 설정하세요!');
-        });
+        // 초기화
+        function init() {
+            setupEventListeners();
+            updatePreview();
+        }
         
-        // 초기 렌더링
-        updatePreview();
-        
-        // 페이지 로드 완료 후 KaTeX 전역 설정
-        document.addEventListener('DOMContentLoaded', () => {
-            // KaTeX 전역 매크로 설정
-            window.katexMacros = {
-                "\\RR": "\\mathbb{R}",
-                "\\NN": "\\mathbb{N}",
-                "\\ZZ": "\\mathbb{Z}",
-                "\\QQ": "\\mathbb{Q}",
-                "\\CC": "\\mathbb{C}",
-                "\\HH": "\\mathbb{H}",
-                "\\PP": "\\mathbb{P}",
-                "\\EE": "\\mathbb{E}",
-                "\\FF": "\\mathbb{F}"
-            };
-        });
+        // DOM 로드 완료 후 실행
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
