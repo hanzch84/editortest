@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실제 작동하는 StackEdit 임베딩 에디터</title>
+    <title>StackEdit 풀스크린 임베딩</title>
     
     <style>
         * {
@@ -20,20 +20,20 @@
         
         .header {
             text-align: center;
-            padding: 20px;
+            padding: 15px 20px;
             color: white;
         }
         
         .header h1 {
             margin: 0;
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
             text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         
         .header p {
-            margin: 8px 0 0 0;
-            font-size: 1rem;
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
             opacity: 0.9;
         }
         
@@ -47,7 +47,7 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
         
@@ -55,7 +55,7 @@
             background: rgba(255,255,255,0.2);
             color: white;
             border: 2px solid rgba(255,255,255,0.3);
-            padding: 10px 20px;
+            padding: 8px 18px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 13px;
@@ -81,15 +81,19 @@
             box-shadow: 0 15px 50px rgba(0,0,0,0.3);
             overflow: hidden;
             backdrop-filter: blur(20px);
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .editor-header {
             background: linear-gradient(90deg, #667eea, #764ba2);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
         
         .editor-title {
@@ -102,61 +106,7 @@
             opacity: 0.9;
         }
         
-        .split-view {
-            display: flex;
-            height: 80vh;
-            min-height: 700px;
-        }
-        
-        .source-panel, .iframe-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .source-panel {
-            border-right: 1px solid #e5e7eb;
-            background: #fafbfc;
-        }
-        
-        .iframe-panel {
-            background: white;
-        }
-        
-        .panel-header {
-            padding: 12px 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .source-header {
-            background: #f8f9fa;
-            color: #4a5568;
-        }
-        
-        .iframe-header {
-            background: #ffffff;
-            color: #4a5568;
-        }
-        
-        .source-textarea {
-            flex: 1;
-            border: none;
-            padding: 20px;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-            font-size: 14px;
-            line-height: 1.7;
-            resize: none;
-            outline: none;
-            background: #fafbfc;
-            color: #2d3748;
-        }
-        
-        .iframe-container {
+        .stackedit-wrapper {
             flex: 1;
             position: relative;
             background: white;
@@ -184,10 +134,10 @@
         }
         
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f4f6;
-            border-top: 4px solid #667eea;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f4f6;
+            border-top: 5px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -198,8 +148,8 @@
         }
         
         .demo-section {
-            margin-top: 20px;
-            padding: 20px;
+            margin-top: 15px;
+            padding: 15px;
             background: rgba(255,255,255,0.95);
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -207,8 +157,8 @@
         
         .demo-buttons {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
             justify-content: center;
         }
@@ -216,9 +166,9 @@
         .demo-btn {
             background: #667eea;
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
@@ -232,176 +182,223 @@
         .info-box {
             background: #e8f4fd;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             border-left: 4px solid #667eea;
-            margin-top: 15px;
+            text-align: center;
         }
         
         .info-box h4 {
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             color: #4338ca;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .info-box p {
             margin: 0;
             color: #64748b;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
         }
         
         .error-message {
             color: #dc2626;
             background: #fee2e2;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             border-left: 4px solid #dc2626;
-            margin: 20px;
+            text-align: center;
+        }
+        
+        .quick-start {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #667eea;
+        }
+        
+        .quick-start h3 {
+            margin: 0 0 10px 0;
+            color: #4338ca;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .quick-start-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .quick-start-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .quick-start-item h4 {
+            margin: 0 0 5px 0;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        .quick-start-item p {
+            margin: 0;
+            color: #64748b;
+            font-size: 11px;
         }
         
         @media (max-width: 768px) {
-            .split-view {
-                flex-direction: column;
-                height: auto;
+            .editor-container {
+                height: 80vh;
             }
             
-            .source-panel, .iframe-panel {
-                min-height: 400px;
+            .header h1 {
+                font-size: 1.6rem;
             }
             
-            .source-panel {
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
+            .toolbar {
+                gap: 5px;
+            }
+            
+            .btn {
+                padding: 6px 14px;
+                font-size: 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📝 StackEdit 직접 임베딩</h1>
-        <p>실제 StackEdit.io를 iframe으로 직접 임베딩</p>
+        <h1>📝 StackEdit 풀스크린 에디터</h1>
+        <p>완전한 StackEdit 경험을 웹페이지에서</p>
     </div>
     
     <div class="container">
         <div class="toolbar">
-            <button class="btn active" id="initBtn">🚀 StackEdit 시작</button>
+            <button class="btn active" id="startBtn">🚀 StackEdit 시작</button>
             <button class="btn" id="refreshBtn">🔄 새로고침</button>
             <button class="btn" id="fullscreenBtn">⛶ 전체화면</button>
-            <button class="btn" id="downloadBtn">💾 다운로드</button>
+            <button class="btn" id="themeBtn">🎨 다크모드</button>
         </div>
         
         <div class="editor-container">
             <div class="editor-header">
-                <div class="editor-title">📝 StackEdit 직접 임베딩 에디터</div>
+                <div class="editor-title">📝 StackEdit 풀스크린 에디터</div>
                 <div class="editor-status" id="editorStatus">준비됨</div>
             </div>
             
-            <div class="split-view">
-                <div class="source-panel">
-                    <div class="panel-header source-header">
-                        📝 마크다운 소스
-                    </div>
-                    <textarea id="sourceTextarea" class="source-textarea" placeholder="StackEdit 에디터에서 편집한 내용이 여기에 표시됩니다...
-
-아래 '데모 로드' 버튼을 클릭하거나
-오른쪽 StackEdit에서 직접 편집해보세요!"># 🚀 StackEdit 직접 임베딩 데모
-
-이것은 **실제 StackEdit.io**를 iframe으로 직접 임베딩한 에디터입니다.
-
-## ✨ 특징
-
-- 📝 **실제 StackEdit**: stackedit.io의 완전한 기능
-- 🧮 **KaTeX 수학**: $E = mc^2$ 완벽 지원
-- 📊 **Mermaid 다이어그램**: 모든 차트 지원
-- 💾 **파일 관리**: 클라우드 동기화 지원
-- 🎨 **테마**: 다크/라이트 모드
-
-## 🎯 사용법
-
-1. **"StackEdit 시작"** 버튼 클릭
-2. 오른쪽에서 StackEdit으로 편집
-3. 데모 버튼으로 샘플 로드
-4. 다운로드 기능 활용
-
-## 🧮 수학 예제
-$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
-
-## 📊 다이어그램 예제
-```mermaid
-graph TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Success]
-    B -->|No| D[Retry]
-```
-
-**오른쪽 StackEdit에서 편집해보세요!** 🎉</textarea>
+            <div class="stackedit-wrapper">
+                <div class="loading-screen" id="loadingScreen">
+                    <div class="loading-spinner"></div>
+                    <h3 style="margin: 20px 0 10px 0; color: #667eea;">StackEdit 로딩 중...</h3>
+                    <p style="margin: 0; color: #64748b; font-size: 14px;">"StackEdit 시작" 버튼을 클릭하세요</p>
+                    <button class="btn" onclick="document.getElementById('startBtn').click()" style="margin-top: 15px;">
+                        🚀 지금 시작하기
+                    </button>
                 </div>
-                
-                <div class="iframe-panel">
-                    <div class="panel-header iframe-header">
-                        ⚡ StackEdit.io 에디터
-                    </div>
-                    <div class="iframe-container">
-                        <div class="loading-screen" id="loadingScreen">
-                            <div class="loading-spinner"></div>
-                            <p style="margin-top: 15px; color: #64748b;">StackEdit 로딩 중...</p>
-                            <p style="font-size: 12px; color: #9ca3af;">"StackEdit 시작" 버튼을 클릭하세요</p>
-                        </div>
-                        <!-- StackEdit iframe이 여기에 로드됩니다 -->
-                    </div>
+            </div>
+        </div>
+        
+        <div class="quick-start">
+            <h3>⚡ 빠른 시작 가이드</h3>
+            <div class="quick-start-grid">
+                <div class="quick-start-item">
+                    <h4>🎯 1단계</h4>
+                    <p>"StackEdit 시작" 클릭하여 에디터 로드</p>
+                </div>
+                <div class="quick-start-item">
+                    <h4>📝 2단계</h4>
+                    <p>왼쪽에서 마크다운 편집, 오른쪽에서 미리보기</p>
+                </div>
+                <div class="quick-start-item">
+                    <h4>🧮 3단계</h4>
+                    <p>수학 공식과 다이어그램 자유롭게 사용</p>
+                </div>
+                <div class="quick-start-item">
+                    <h4>💾 4단계</h4>
+                    <p>파일 메뉴에서 저장 및 내보내기</p>
                 </div>
             </div>
         </div>
         
         <div class="demo-section">
-            <h3 style="color: #4338ca; margin: 0 0 15px 0; text-align: center;">🎯 데모 및 샘플</h3>
+            <h4 style="color: #4338ca; margin: 0 0 12px 0; text-align: center;">🎯 샘플 문서로 시작하기</h4>
             <div class="demo-buttons">
-                <button class="demo-btn" data-demo="welcome">🏠 환영 메시지</button>
+                <button class="demo-btn" data-demo="welcome">🏠 환영 문서</button>
                 <button class="demo-btn" data-demo="math">🧮 수학 공식</button>
                 <button class="demo-btn" data-demo="diagrams">📊 다이어그램</button>
-                <button class="demo-btn" data-demo="tables">📋 고급 표</button>
-                <button class="demo-btn" data-demo="features">✨ 모든 기능</button>
+                <button class="demo-btn" data-demo="presentation">📋 프레젠테이션</button>
+                <button class="demo-btn" data-demo="tutorial">📚 튜토리얼</button>
+                <button class="demo-btn" data-demo="scientific">🔬 과학 논문</button>
             </div>
             
             <div class="info-box">
                 <h4>💡 사용 팁</h4>
                 <p>
-                    • <strong>"StackEdit 시작"</strong>을 클릭하면 실제 StackEdit이 로드됩니다<br>
-                    • 데모 버튼으로 다양한 예제를 왼쪽에 로드할 수 있습니다<br>
-                    • StackEdit에서는 파일 저장, 동기화, 내보내기 등 모든 기능을 사용할 수 있습니다<br>
-                    • 전체화면 모드로 더 넓은 작업 공간을 활용하세요
+                    샘플 버튼을 클릭하면 StackEdit URL에 샘플 내용이 추가됩니다 • 
+                    StackEdit의 파일 메뉴에서 새 문서 생성, 저장, 동기화 가능 • 
+                    수학 공식은 $...$ (인라인) 또는 $$...$$ (블록) 사용 • 
+                    다이어그램은 ```mermaid 코드 블록 사용
                 </p>
             </div>
         </div>
     </div>
 
     <script>
-        class DirectStackEditEmbed {
+        class FullscreenStackEdit {
             constructor() {
                 this.iframe = null;
                 this.isLoaded = false;
+                this.isDarkMode = false;
                 
-                this.sourceTextarea = document.getElementById('sourceTextarea');
-                this.iframeContainer = document.querySelector('.iframe-container');
+                this.stackeditWrapper = document.querySelector('.stackedit-wrapper');
                 this.loadingScreen = document.getElementById('loadingScreen');
                 
                 this.setupEventListeners();
+                this.checkExistingSession();
+            }
+            
+            checkExistingSession() {
+                // 기존 StackEdit 세션이 있는지 확인하고 자동 로드 옵션 제공
+                const hasSession = localStorage.getItem('stackedit-session');
+                if (hasSession) {
+                    this.updateStatus('이전 세션 발견됨');
+                }
             }
             
             setupEventListeners() {
                 // 툴바 버튼들
-                document.getElementById('initBtn').addEventListener('click', () => this.initStackEdit());
+                document.getElementById('startBtn').addEventListener('click', () => this.startStackEdit());
                 document.getElementById('refreshBtn').addEventListener('click', () => this.refreshStackEdit());
                 document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
-                document.getElementById('downloadBtn').addEventListener('click', () => this.downloadContent());
+                document.getElementById('themeBtn').addEventListener('click', () => this.toggleTheme());
                 
                 // 데모 버튼들
                 document.querySelectorAll('.demo-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => this.loadDemo(e.target.dataset.demo));
                 });
+                
+                // 키보드 단축키
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key) {
+                            case 'Enter':
+                                e.preventDefault();
+                                this.startStackEdit();
+                                break;
+                            case 'r':
+                                e.preventDefault();
+                                this.refreshStackEdit();
+                                break;
+                        }
+                    }
+                });
             }
             
-            async initStackEdit() {
+            async startStackEdit(demoContent = null) {
                 try {
                     this.updateStatus('StackEdit 로딩 중...');
                     this.showLoading(true);
@@ -411,11 +408,21 @@ graph TD
                         this.iframe.remove();
                     }
                     
+                    // StackEdit URL 생성
+                    let stackEditUrl = 'https://stackedit.io/app#';
+                    
+                    // 데모 콘텐츠가 있으면 URL에 추가
+                    if (demoContent) {
+                        const encodedContent = encodeURIComponent(demoContent);
+                        stackEditUrl = `https://stackedit.io/app#providerId=disk&fileId=${Date.now()}&content=${encodedContent}`;
+                    }
+                    
                     // 새 iframe 생성
                     this.iframe = document.createElement('iframe');
                     this.iframe.className = 'stackedit-iframe';
-                    this.iframe.src = 'https://stackedit.io/app#';
+                    this.iframe.src = stackEditUrl;
                     this.iframe.title = 'StackEdit Editor';
+                    this.iframe.allow = 'fullscreen';
                     
                     // iframe 로드 이벤트
                     this.iframe.onload = () => {
@@ -424,7 +431,8 @@ graph TD
                             this.showLoading(false);
                             this.isLoaded = true;
                             this.updateStatus('StackEdit 준비 완료');
-                        }, 3000); // StackEdit이 완전히 로드될 시간
+                            localStorage.setItem('stackedit-session', 'active');
+                        }, 2500);
                     };
                     
                     this.iframe.onerror = () => {
@@ -433,11 +441,12 @@ graph TD
                     };
                     
                     // iframe 추가
-                    this.iframeContainer.appendChild(this.iframe);
+                    this.stackeditWrapper.appendChild(this.iframe);
                     
                     // 버튼 상태 변경
-                    document.getElementById('initBtn').textContent = '✅ 로드됨';
-                    document.getElementById('initBtn').classList.add('active');
+                    const startBtn = document.getElementById('startBtn');
+                    startBtn.textContent = '✅ 로드됨';
+                    startBtn.classList.add('active');
                     
                 } catch (error) {
                     console.error('StackEdit 초기화 실패:', error);
@@ -448,317 +457,357 @@ graph TD
             refreshStackEdit() {
                 if (this.iframe) {
                     this.updateStatus('새로고침 중...');
-                    this.iframe.src = this.iframe.src; // 새로고침
+                    this.iframe.src = this.iframe.src;
                     setTimeout(() => {
                         this.updateStatus('새로고침 완료');
                     }, 2000);
                 } else {
-                    this.initStackEdit();
+                    this.startStackEdit();
                 }
             }
             
             toggleFullscreen() {
                 const container = document.querySelector('.editor-container');
                 if (!document.fullscreenElement) {
-                    container.requestFullscreen().catch(err => {
+                    container.requestFullscreen().then(() => {
+                        this.updateStatus('전체화면 모드');
+                        document.getElementById('fullscreenBtn').textContent = '🔲 창 모드';
+                    }).catch(err => {
                         console.error('전체화면 실패:', err);
                         alert('전체화면을 지원하지 않는 브라우저입니다.');
                     });
                 } else {
-                    document.exitFullscreen();
+                    document.exitFullscreen().then(() => {
+                        this.updateStatus('창 모드');
+                        document.getElementById('fullscreenBtn').textContent = '⛶ 전체화면';
+                    });
                 }
             }
             
-            downloadContent() {
-                const content = this.sourceTextarea.value;
-                if (content.trim()) {
-                    this.downloadFile(content, 'document.md', 'text/markdown');
-                    this.updateStatus('다운로드 완료');
+            toggleTheme() {
+                this.isDarkMode = !this.isDarkMode;
+                const themeBtn = document.getElementById('themeBtn');
+                
+                if (this.isDarkMode) {
+                    document.body.style.background = 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)';
+                    themeBtn.textContent = '☀️ 라이트모드';
+                    this.updateStatus('다크모드 활성화');
                 } else {
-                    alert('다운로드할 내용이 없습니다.');
+                    document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    themeBtn.textContent = '🎨 다크모드';
+                    this.updateStatus('라이트모드 활성화');
                 }
-            }
-            
-            downloadFile(content, filename, mimeType) {
-                const blob = new Blob([content], { type: mimeType });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             }
             
             loadDemo(demoType) {
                 const demos = {
                     welcome: `# 🎉 StackEdit에 오신 것을 환영합니다!
 
-이것은 **실제 StackEdit.io**를 iframe으로 직접 임베딩한 에디터입니다.
+이것은 **완전한 StackEdit**이 웹페이지에 임베딩된 에디터입니다.
 
-## 🚀 주요 기능
+## 🚀 StackEdit의 강력한 기능들
 
-### ✨ 완전한 StackEdit 기능
-- 📝 실시간 마크다운 편집
-- 🧮 완전한 KaTeX 수학 지원
-- 📊 Mermaid 다이어그램
-- 💾 클라우드 동기화 (Google Drive, Dropbox, GitHub)
-- 🎨 테마 및 커스터마이징
-- 📤 다양한 내보내기 형식
+### ✨ 실시간 편집
+- 왼쪽: 마크다운 소스 편집
+- 오른쪽: 실시간 미리보기
+- 동기화된 스크롤
 
-### 🎯 사용법
-1. 오른쪽 StackEdit에서 자유롭게 편집
-2. 파일 메뉴에서 새 문서 생성
-3. 동기화 설정으로 클라우드 연결
-4. 발행 기능으로 블로그에 게시
+### 🧮 완전한 수학 지원
+$$E = mc^2$$
 
-**이제 진짜 StackEdit의 모든 기능을 경험해보세요!** 🎨`,
+인라인 수식: $\\alpha + \\beta = \\gamma$
+
+### 📊 다이어그램
+\`\`\`mermaid
+graph TD
+    A[Welcome] --> B[Start Writing]
+    B --> C[Enjoy StackEdit!]
+\`\`\`
+
+### 💾 파일 관리
+- Google Drive 동기화
+- Dropbox 연동
+- GitHub 발행
+- 다양한 내보내기 형식
+
+### 🎨 커스터마이징
+- 테마 변경
+- 레이아웃 조정
+- 확장 기능
+
+**이제 진짜 StackEdit의 모든 기능을 사용해보세요!** 🎯`,
 
                     math: `# 🧮 수학 공식 완전 가이드
 
-## 기본 수식
-인라인 수식: $E = mc^2$, $\pi r^2$, $\alpha + \beta = \gamma$
+## 기본 문법
+인라인: $x^2 + y^2 = z^2$
+블록: $$\\sum_{i=1}^{n} x_i = x_1 + x_2 + \\cdots + x_n$$
 
 ## 고급 수식
-맥스웰 방정식:
-$$\\nabla \\times \\vec{\\mathbf{B}} -\\, \\frac1c\\, \\frac{\\partial\\vec{\\mathbf{E}}}{\\partial t} = \\frac{4\\pi}{c}\\vec{\\mathbf{j}}$$
 
-$$\\nabla \\cdot \\vec{\\mathbf{E}} = 4 \\pi \\rho$$
+### 미적분학
+$$\\frac{d}{dx}\\int_{a}^{x} f(t) dt = f(x)$$
 
-## 행렬 연산
+### 선형대수
 $$\\begin{pmatrix}
-\\cos\\theta & -\\sin\\theta \\\\
-\\sin\\theta & \\cos\\theta
+a & b \\\\
+c & d
 \\end{pmatrix}
 \\begin{pmatrix}
 x \\\\ y
 \\end{pmatrix}
 =
 \\begin{pmatrix}
-x\\cos\\theta - y\\sin\\theta \\\\
-x\\sin\\theta + y\\cos\\theta
+ax + by \\\\
+cx + dy
 \\end{pmatrix}$$
 
-## 적분과 급수
-$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+### 확률론
+$$P(A|B) = \\frac{P(B|A)P(A)}{P(B)}$$
 
-$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$
+### 물리학
+$$\\nabla \\times \\vec{E} = -\\frac{\\partial \\vec{B}}{\\partial t}$$
 
-## 복소해석
-$$e^{i\\pi} + 1 = 0$$
+### 화학
+$$\\ce{2H2 + O2 -> 2H2O}$$`,
 
-$$\\oint_C f(z) dz = 2\\pi i \\sum \\text{Res}(f, z_k)$$`,
-
-                    diagrams: `# 📊 Mermaid 다이어그램 완전 가이드
+                    diagrams: `# 📊 Mermaid 다이어그램 갤러리
 
 ## 플로우차트
 \`\`\`mermaid
-graph TD
-    A[프로젝트 시작] --> B{요구사항 명확?}
-    B -->|Yes| C[설계 시작]
-    B -->|No| D[추가 분석]
-    D --> B
-    C --> E[개발]
-    E --> F[테스트]
-    F --> G{품질 OK?}
-    G -->|Yes| H[배포]
-    G -->|No| E
-    H --> I[완료]
+graph TB
+    A[시작] --> B{조건}
+    B -->|참| C[작업 A]
+    B -->|거짓| D[작업 B]
+    C --> E[완료]
+    D --> E
 \`\`\`
 
 ## 시퀀스 다이어그램
 \`\`\`mermaid
 sequenceDiagram
-    participant U as 사용자
-    participant F as 프론트엔드
-    participant A as API 서버
-    participant D as 데이터베이스
+    participant A as 클라이언트
+    participant B as 서버
+    participant C as 데이터베이스
     
-    U->>F: 로그인 요청
-    F->>A: 인증 API 호출
-    A->>D: 사용자 정보 조회
-    D-->>A: 사용자 데이터
-    A-->>F: JWT 토큰 발급
-    F-->>U: 로그인 성공
-\`\`\`
-
-## 클래스 다이어그램
-\`\`\`mermaid
-classDiagram
-    class Animal {
-        +String name
-        +int age
-        +makeSound()
-        +move()
-    }
-    class Dog {
-        +String breed
-        +bark()
-        +wagTail()
-    }
-    class Cat {
-        +String color
-        +meow()
-        +purr()
-    }
-    Animal <|-- Dog
-    Animal <|-- Cat
+    A->>B: 요청
+    B->>C: 쿼리
+    C-->>B: 결과
+    B-->>A: 응답
 \`\`\`
 
 ## 간트 차트
 \`\`\`mermaid
 gantt
-    title 웹 애플리케이션 개발 일정
-    dateFormat  YYYY-MM-DD
-    
-    section 기획
-    요구사항 분석    :done, req, 2024-01-01, 2024-01-15
-    UI/UX 설계      :done, design, after req, 20d
-    
+    title 프로젝트 일정
+    dateFormat YYYY-MM-DD
     section 개발
-    프론트엔드      :active, frontend, 2024-02-05, 45d
-    백엔드 개발     :backend, 2024-02-10, 40d
-    데이터베이스    :db, 2024-02-15, 25d
-    
-    section 테스트
-    단위 테스트     :test1, after frontend, 10d
-    통합 테스트     :test2, after backend, 15d
-    
-    section 배포
-    스테이징 배포   :deploy1, after test2, 5d
-    프로덕션 배포   :deploy2, after deploy1, 3d
+    설계    :2024-01-01, 30d
+    구현    :2024-02-01, 45d
+    테스트  :2024-03-15, 15d
 \`\`\``,
 
-                    tables: `# 📋 고급 표 사용법
+                    presentation: `# 🎯 프레젠테이션 템플릿
 
-## 기본 표
-| 항목 | 설명 | 상태 | 점수 |
-|------|------|------|------|
-| StackEdit | 최고의 마크다운 에디터 | ✅ 완성 | 10/10 |
-| KaTeX | 수학 공식 렌더링 | ✅ 완벽 | 10/10 |
-| Mermaid | 다이어그램 생성 | ✅ 지원 | 9/10 |
+---
 
-## 정렬 표
-| 왼쪽 정렬 | 가운데 정렬 | 오른쪽 정렬 |
-|:----------|:----------:|----------:|
-| 왼쪽 | 가운데 | 오른쪽 |
-| Left | Center | Right |
-| 1 | 2 | 3 |
+# 제목 슬라이드
+## 부제목
+**발표자: 홍길동**
+*날짜: 2024년*
 
-## 수식 포함 표
-| 수학 공식 | 이름 | 분야 |
-|-----------|------|------|
-| $E = mc^2$ | 질량-에너지 등가성 | 상대성이론 |
-| $F = ma$ | 뉴턴의 제2법칙 | 고전역학 |
-| $\\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}$ | 가우스 법칙 | 전자기학 |
-| $\\int_a^b f(x) dx$ | 정적분 | 미적분학 |
+---
 
-## 복합 표
-| 언어 | 타입 | 특징 | 사용 예 |
-|------|------|------|-------|
-| **JavaScript** | 동적 | • 유연함<br>• 웹 표준<br>• 이벤트 기반 | 웹 개발 |
-| **Python** | 동적 | • 간결함<br>• 라이브러리 풍부<br>• AI/ML | 데이터 과학 |
-| **Java** | 정적 | • 객체지향<br>• 플랫폼 독립<br>• 엔터프라이즈 | 백엔드 개발 |`,
+## 목차
+1. 소개
+2. 문제 정의
+3. 해결 방안
+4. 결론
 
-                    features: `# ✨ StackEdit 모든 기능 데모
+---
 
-## 🎨 텍스트 스타일링
-**굵은 글씨**, *이탤릭*, ~~취소선~~, \`인라인 코드\`
+## 핵심 아이디어
 
-> 인용문도 아름답게 표현됩니다.
-> 여러 줄 인용문도 가능합니다.
+> "혁신은 리더와 팔로워를 구분하는 것이다." - 스티브 잡스
 
-## 📝 리스트
-### 순서 없는 리스트
-- 첫 번째 항목
-- 두 번째 항목
-  - 중첩 항목 1
-  - 중첩 항목 2
-- 세 번째 항목
+### 주요 포인트
+- ✅ 명확한 목표
+- ✅ 실행 가능한 계획
+- ✅ 측정 가능한 결과
 
-### 순서 있는 리스트
-1. 계획 수립
-2. 실행
-   1. 개발
-   2. 테스트
-3. 완료
+---
 
-## 🔗 링크와 이미지
-[StackEdit 공식 사이트](https://stackedit.io/)
+## 데이터 시각화
 
-![StackEdit Logo](https://stackedit.io/static/landing/stackedit-logo.svg)
+| 지표 | Q1 | Q2 | Q3 | Q4 |
+|------|----|----|----|----|
+| 매출 | 100M | 120M | 150M | 180M |
+| 성장률 | - | 20% | 25% | 20% |
 
-## 💻 코드 블록
+$$\\text{ROI} = \\frac{\\text{수익} - \\text{투자}}{\\text{투자}} \\times 100\\%$$
+
+---
+
+## 감사합니다!
+### 질문이 있으시면 언제든지 연락주세요.`,
+
+                    tutorial: `# 📚 StackEdit 완전 튜토리얼
+
+## 1. 기본 마크다운
+
+### 텍스트 서식
+**굵게**, *기울임*, ~~취소선~~, \`코드\`
+
+### 제목
+# H1 제목
+## H2 제목
+### H3 제목
+
+### 리스트
+- 항목 1
+- 항목 2
+  - 하위 항목
+
+1. 순서 항목 1
+2. 순서 항목 2
+
+## 2. 고급 기능
+
+### 표
+| 헤더1 | 헤더2 | 헤더3 |
+|-------|-------|-------|
+| 데이터1 | 데이터2 | 데이터3 |
+
+### 인용문
+> 이것은 인용문입니다.
+
+### 코드 블록
 \`\`\`javascript
-// JavaScript 예제
-const editor = new StackEdit();
-editor.openFile({
-  name: 'demo.md',
-  content: { text: '# Hello StackEdit!' }
-});
+function hello() {
+    console.log("Hello StackEdit!");
+}
 \`\`\`
 
-\`\`\`python
-# Python 예제
-import numpy as np
-import matplotlib.pyplot as plt
+## 3. 수학 공식
 
-x = np.linspace(0, 2*np.pi, 100)
-y = np.sin(x)
-plt.plot(x, y)
-plt.show()
-\`\`\`
+인라인: $f(x) = x^2$
+블록: $$\\int_{0}^{\\infty} e^{-x} dx = 1$$
 
-## 🧮 고급 수학
-### 미적분학
-$$\\frac{d}{dx}\\int_{a(x)}^{b(x)} f(x,t) dt = f(x,b(x))b'(x) - f(x,a(x))a'(x) + \\int_{a(x)}^{b(x)} \\frac{\\partial f}{\\partial x}(x,t) dt$$
+## 4. 다이어그램
 
-### 선형대수
-$$\\det(A) = \\sum_{\\sigma \\in S_n} \\text{sgn}(\\sigma) \\prod_{i=1}^n a_{i,\\sigma(i)}$$
-
-### 확률론
-$$\\mathbb{P}(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}$$
-
-## 📊 복합 다이어그램
 \`\`\`mermaid
-graph TB
-    subgraph "Frontend"
-        A[React App]
-        B[Redux Store]
-        C[Components]
-    end
-    
-    subgraph "Backend"
-        D[Express Server]
-        E[API Routes]
-        F[Middleware]
-    end
-    
-    subgraph "Database"
-        G[MongoDB]
-        H[Collections]
-    end
-    
-    A --> B
-    B --> C
-    A --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
+graph LR
+    A[시작] --> B[학습]
+    B --> C[실습]
+    C --> D[마스터!]
+\`\`\`
+
+## 5. 팁과 트릭
+
+### 키보드 단축키
+- Ctrl+B: **굵게**
+- Ctrl+I: *기울임*
+- Ctrl+K: 링크 삽입
+
+### 파일 관리
+- Ctrl+S: 저장
+- Ctrl+O: 열기
+- Ctrl+N: 새 파일
+
+**이제 StackEdit 마스터입니다!** 🎓`,
+
+                    scientific: `# 🔬 과학 논문 템플릿
+
+## Abstract
+This study investigates the mathematical properties of...
+
+**Keywords:** mathematics, analysis, research
+
+---
+
+## 1. Introduction
+
+The purpose of this research is to analyze...
+
+### 1.1 Background
+Previous studies have shown that:
+$$\\lim_{x \\to \\infty} f(x) = L$$
+
+### 1.2 Objectives
+- Analyze mathematical properties
+- Develop new algorithms
+- Validate theoretical results
+
+---
+
+## 2. Methodology
+
+### 2.1 Mathematical Framework
+Let $X$ be a complete metric space. We define:
+
+$$d(x,y) = \\sup_{t \\in [0,1]} |x(t) - y(t)|$$
+
+### 2.2 Algorithm Design
+\`\`\`python
+def analyze_data(dataset):
+    result = []
+    for item in dataset:
+        processed = process(item)
+        result.append(processed)
+    return result
 \`\`\`
 
 ---
 
-**이것이 StackEdit의 진정한 힘입니다!** 🚀
+## 3. Results
 
-모든 기능을 자유롭게 사용해보세요. 파일 저장, 동기화, 발행까지 모든 것이 가능합니다!`
+### 3.1 Experimental Data
+
+| Parameter | Value | Error |
+|-----------|-------|-------|
+| α | 1.234 | ±0.001 |
+| β | 2.567 | ±0.002 |
+| γ | 3.890 | ±0.003 |
+
+### 3.2 Statistical Analysis
+The correlation coefficient is:
+$$r = \\frac{\\sum(x_i - \\bar{x})(y_i - \\bar{y})}{\\sqrt{\\sum(x_i - \\bar{x})^2 \\sum(y_i - \\bar{y})^2}}$$
+
+---
+
+## 4. Discussion
+
+The results indicate that...
+
+### 4.1 Implications
+\`\`\`mermaid
+graph TD
+    A[Hypothesis] --> B[Experiment]
+    B --> C[Analysis]
+    C --> D[Conclusion]
+\`\`\`
+
+---
+
+## 5. Conclusion
+
+In conclusion, this study demonstrates...
+
+### Future Work
+- Extend the analysis to...
+- Investigate the relationship between...
+- Develop more efficient algorithms...
+
+---
+
+## References
+1. Smith, J. (2023). *Mathematical Analysis*. Academic Press.
+2. Johnson, A. (2024). "Advanced Algorithms." *Journal of Mathematics*, 45(2), 123-145.`
                 };
                 
                 if (demos[demoType]) {
-                    this.sourceTextarea.value = demos[demoType];
-                    this.updateStatus(`${demoType} 데모 로드됨`);
+                    this.startStackEdit(demos[demoType]);
+                    this.updateStatus(`${demoType} 샘플 로드됨`);
                 }
             }
             
@@ -769,10 +818,10 @@ graph TB
             showError(message) {
                 this.loadingScreen.innerHTML = `
                     <div class="error-message">
-                        <h4>⚠️ 오류 발생</h4>
+                        <h3>⚠️ 오류 발생</h3>
                         <p>${message}</p>
-                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            페이지 새로고침
+                        <button onclick="location.reload()" class="btn" style="margin-top: 15px;">
+                            🔄 페이지 새로고침
                         </button>
                     </div>
                 `;
@@ -787,24 +836,13 @@ graph TB
         
         // 페이지 로드 완료 후 초기화
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Direct StackEdit Embed 초기화');
-            new DirectStackEditEmbed();
+            console.log('StackEdit 풀스크린 에디터 초기화');
+            new FullscreenStackEdit();
         });
         
         // 전역 에러 핸들링
         window.addEventListener('error', (e) => {
             console.error('전역 에러:', e);
-        });
-        
-        // PostMessage API로 StackEdit과 통신 (실험적)
-        window.addEventListener('message', (event) => {
-            if (event.origin === 'https://stackedit.io') {
-                console.log('StackEdit에서 메시지:', event.data);
-                // StackEdit에서 오는 데이터 처리
-                if (event.data.type === 'fileChange') {
-                    document.getElementById('sourceTextarea').value = event.data.content || '';
-                }
-            }
         });
     </script>
 </body>
