@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>임베딩된 StackEdit 에디터</title>
+    <title>실제 작동하는 StackEdit 임베딩 에디터</title>
     
     <style>
         * {
@@ -108,7 +108,7 @@
             min-height: 700px;
         }
         
-        .source-panel, .stackedit-panel {
+        .source-panel, .iframe-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -117,12 +117,10 @@
         .source-panel {
             border-right: 1px solid #e5e7eb;
             background: #fafbfc;
-            max-width: 50%;
         }
         
-        .stackedit-panel {
+        .iframe-panel {
             background: white;
-            min-width: 50%;
         }
         
         .panel-header {
@@ -131,7 +129,7 @@
             font-size: 13px;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
         
@@ -140,7 +138,7 @@
             color: #4a5568;
         }
         
-        .stackedit-header {
+        .iframe-header {
             background: #ffffff;
             color: #4a5568;
         }
@@ -158,7 +156,7 @@
             color: #2d3748;
         }
         
-        .stackedit-iframe-container {
+        .iframe-container {
             flex: 1;
             position: relative;
             background: white;
@@ -171,7 +169,7 @@
             background: white;
         }
         
-        .loading-overlay {
+        .loading-screen {
             position: absolute;
             top: 0;
             left: 0;
@@ -199,7 +197,7 @@
             100% { transform: rotate(360deg); }
         }
         
-        .demo-panel {
+        .demo-section {
             margin-top: 20px;
             padding: 20px;
             background: rgba(255,255,255,0.95);
@@ -207,7 +205,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
         
-        .demo-files {
+        .demo-buttons {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
@@ -215,7 +213,7 @@
             justify-content: center;
         }
         
-        .demo-file {
+        .demo-btn {
             background: #667eea;
             color: white;
             padding: 8px 16px;
@@ -223,14 +221,15 @@
             font-size: 13px;
             cursor: pointer;
             transition: all 0.3s ease;
+            border: none;
         }
         
-        .demo-file:hover {
+        .demo-btn:hover {
             background: #5a67d8;
             transform: translateY(-1px);
         }
         
-        .info-panel {
+        .info-box {
             background: #e8f4fd;
             border-radius: 8px;
             padding: 15px;
@@ -238,17 +237,26 @@
             margin-top: 15px;
         }
         
-        .info-panel h4 {
+        .info-box h4 {
             margin: 0 0 8px 0;
             color: #4338ca;
             font-size: 14px;
         }
         
-        .info-panel p {
+        .info-box p {
             margin: 0;
             color: #64748b;
             font-size: 13px;
             line-height: 1.5;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+            margin: 20px;
         }
         
         @media (max-width: 768px) {
@@ -257,346 +265,218 @@
                 height: auto;
             }
             
-            .source-panel, .stackedit-panel {
+            .source-panel, .iframe-panel {
                 min-height: 400px;
-                max-width: 100%;
-                min-width: 100%;
             }
             
             .source-panel {
                 border-right: none;
                 border-bottom: 1px solid #e5e7eb;
             }
-            
-            .toolbar {
-                gap: 5px;
-            }
-            
-            .btn {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📝 임베딩된 StackEdit 에디터</h1>
-        <p>페이지에 직접 통합된 실제 StackEdit 에디터</p>
+        <h1>📝 StackEdit 직접 임베딩</h1>
+        <p>실제 StackEdit.io를 iframe으로 직접 임베딩</p>
     </div>
     
     <div class="container">
         <div class="toolbar">
-            <button class="btn" id="newFileBtn">📄 새 파일</button>
-            <button class="btn" id="saveBtn">💾 저장</button>
-            <button class="btn" id="exportHtmlBtn">📤 HTML 내보내기</button>
-            <button class="btn" id="exportMdBtn">📝 MD 내보내기</button>
+            <button class="btn active" id="initBtn">🚀 StackEdit 시작</button>
+            <button class="btn" id="refreshBtn">🔄 새로고침</button>
             <button class="btn" id="fullscreenBtn">⛶ 전체화면</button>
+            <button class="btn" id="downloadBtn">💾 다운로드</button>
         </div>
         
         <div class="editor-container">
             <div class="editor-header">
-                <div class="editor-title">📝 StackEdit 통합 에디터</div>
-                <div class="editor-status" id="editorStatus">
-                    <span id="fileName">document.md</span> • 
-                    <span id="fileStatus">준비됨</span>
-                </div>
+                <div class="editor-title">📝 StackEdit 직접 임베딩 에디터</div>
+                <div class="editor-status" id="editorStatus">준비됨</div>
             </div>
             
             <div class="split-view">
                 <div class="source-panel">
                     <div class="panel-header source-header">
-                        📝 마크다운 소스 (실시간 동기화)
+                        📝 마크다운 소스
                     </div>
-                    <textarea id="sourceTextarea" class="source-textarea" placeholder="StackEdit 에디터가 로딩되면 여기에 실시간으로 내용이 동기화됩니다...
+                    <textarea id="sourceTextarea" class="source-textarea" placeholder="StackEdit 에디터에서 편집한 내용이 여기에 표시됩니다...
 
-에디터 준비 중... 잠시만 기다려주세요!"># 🚀 임베딩된 StackEdit 에디터
+아래 '데모 로드' 버튼을 클릭하거나
+오른쪽 StackEdit에서 직접 편집해보세요!"># 🚀 StackEdit 직접 임베딩 데모
 
-이 에디터는 **실제 StackEdit**이 페이지에 직접 임베딩되어 있습니다!
+이것은 **실제 StackEdit.io**를 iframe으로 직접 임베딩한 에디터입니다.
 
-## ✨ 실시간 기능
+## ✨ 특징
 
-오른쪽 StackEdit에서 편집하면 왼쪽 소스가 **실시간으로** 업데이트됩니다.
+- 📝 **실제 StackEdit**: stackedit.io의 완전한 기능
+- 🧮 **KaTeX 수학**: $E = mc^2$ 완벽 지원
+- 📊 **Mermaid 다이어그램**: 모든 차트 지원
+- 💾 **파일 관리**: 클라우드 동기화 지원
+- 🎨 **테마**: 다크/라이트 모드
 
-## 🧮 수학 공식
-$$E = mc^2$$
+## 🎯 사용법
 
-인라인 수식도 가능: $\alpha + \beta = \gamma$
+1. **"StackEdit 시작"** 버튼 클릭
+2. 오른쪽에서 StackEdit으로 편집
+3. 데모 버튼으로 샘플 로드
+4. 다운로드 기능 활용
 
-## 📊 다이어그램
+## 🧮 수학 예제
+$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+
+## 📊 다이어그램 예제
 ```mermaid
 graph TD
     A[Start] --> B{Decision}
-    B -->|Yes| C[Action 1]  
-    B -->|No| D[Action 2]
-    C --> E[End]
-    D --> E
+    B -->|Yes| C[Success]
+    B -->|No| D[Retry]
 ```
 
-## 📋 표
-| 기능 | 상태 | 비고 |
-|------|------|------|
-| 실시간 동기화 | ✅ | 완벽 |
-| KaTeX | ✅ | 모든 기능 |
-| Mermaid | ✅ | 모든 다이어그램 |
-
-**이제 오른쪽에서 편집해보세요!** 🎉</textarea>
+**오른쪽 StackEdit에서 편집해보세요!** 🎉</textarea>
                 </div>
                 
-                <div class="stackedit-panel">
-                    <div class="panel-header stackedit-header">
-                        ⚡ StackEdit 에디터 (실시간 편집)
+                <div class="iframe-panel">
+                    <div class="panel-header iframe-header">
+                        ⚡ StackEdit.io 에디터
                     </div>
-                    <div class="stackedit-iframe-container">
-                        <div class="loading-overlay" id="loadingOverlay">
+                    <div class="iframe-container">
+                        <div class="loading-screen" id="loadingScreen">
                             <div class="loading-spinner"></div>
                             <p style="margin-top: 15px; color: #64748b;">StackEdit 로딩 중...</p>
+                            <p style="font-size: 12px; color: #9ca3af;">"StackEdit 시작" 버튼을 클릭하세요</p>
                         </div>
-                        <!-- StackEdit iframe이 여기에 로딩됩니다 -->
+                        <!-- StackEdit iframe이 여기에 로드됩니다 -->
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="demo-panel">
-            <h3 style="color: #4338ca; margin: 0 0 15px 0; text-align: center;">🎯 데모 문서 로드</h3>
-            <div class="demo-files">
-                <div class="demo-file" data-demo="welcome">🏠 Welcome</div>
-                <div class="demo-file" data-demo="math">🧮 수학 공식</div>
-                <div class="demo-file" data-demo="diagrams">📊 다이어그램</div>
-                <div class="demo-file" data-demo="tables">📋 고급 표</div>
-                <div class="demo-file" data-demo="features">✨ 모든 기능</div>
+        <div class="demo-section">
+            <h3 style="color: #4338ca; margin: 0 0 15px 0; text-align: center;">🎯 데모 및 샘플</h3>
+            <div class="demo-buttons">
+                <button class="demo-btn" data-demo="welcome">🏠 환영 메시지</button>
+                <button class="demo-btn" data-demo="math">🧮 수학 공식</button>
+                <button class="demo-btn" data-demo="diagrams">📊 다이어그램</button>
+                <button class="demo-btn" data-demo="tables">📋 고급 표</button>
+                <button class="demo-btn" data-demo="features">✨ 모든 기능</button>
             </div>
             
-            <div class="info-panel">
-                <h4>💡 사용 방법</h4>
+            <div class="info-box">
+                <h4>💡 사용 팁</h4>
                 <p>
-                    • 오른쪽 StackEdit 에디터에서 직접 편집하세요<br>
-                    • 변경사항이 왼쪽 소스에 실시간으로 반영됩니다<br>
-                    • 데모 버튼을 클릭해서 다양한 예제를 체험해보세요<br>
-                    • 전체화면 모드로 더 넓은 편집 공간을 활용하세요
+                    • <strong>"StackEdit 시작"</strong>을 클릭하면 실제 StackEdit이 로드됩니다<br>
+                    • 데모 버튼으로 다양한 예제를 왼쪽에 로드할 수 있습니다<br>
+                    • StackEdit에서는 파일 저장, 동기화, 내보내기 등 모든 기능을 사용할 수 있습니다<br>
+                    • 전체화면 모드로 더 넓은 작업 공간을 활용하세요
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- StackEdit.js 라이브러리 -->
-    <script src="https://unpkg.com/stackedit-js@1.0.7/docs/lib/stackedit.min.js"></script>
-    
     <script>
-        class EmbeddedStackEdit {
+        class DirectStackEditEmbed {
             constructor() {
-                this.stackedit = null;
-                this.currentFile = null;
-                this.isReady = false;
+                this.iframe = null;
+                this.isLoaded = false;
                 
                 this.sourceTextarea = document.getElementById('sourceTextarea');
-                this.iframeContainer = document.querySelector('.stackedit-iframe-container');
-                this.loadingOverlay = document.getElementById('loadingOverlay');
+                this.iframeContainer = document.querySelector('.iframe-container');
+                this.loadingScreen = document.getElementById('loadingScreen');
                 
                 this.setupEventListeners();
-                this.initializeStackEdit();
-            }
-            
-            async initializeStackEdit() {
-                try {
-                    this.updateStatus('초기화 중...');
-                    
-                    // StackEdit 인스턴스 생성
-                    this.stackedit = new Stackedit();
-                    
-                    // 초기 파일 설정
-                    this.currentFile = {
-                        name: 'document.md',
-                        content: {
-                            text: this.sourceTextarea.value
-                        },
-                        properties: {
-                            extensions: {
-                                katex: { enabled: true },
-                                mermaid: { enabled: true },
-                                emoji: { enabled: true },
-                                markdownExtra: { enabled: true }
-                            }
-                        }
-                    };
-                    
-                    // StackEdit 열기 (iframe으로 임베딩)
-                    this.stackedit.openFile(this.currentFile);
-                    
-                    // 이벤트 리스너 설정
-                    this.setupStackEditEvents();
-                    
-                    // 로딩 완료 처리
-                    setTimeout(() => {
-                        this.hideLoading();
-                        this.isReady = true;
-                        this.updateStatus('편집 준비 완료');
-                    }, 3000);
-                    
-                } catch (error) {
-                    console.error('StackEdit 초기화 실패:', error);
-                    this.showError('StackEdit을 로드할 수 없습니다.');
-                }
-            }
-            
-            setupStackEditEvents() {
-                // 파일 변경 이벤트
-                this.stackedit.on('fileChange', (file) => {
-                    console.log('파일 변경됨:', file.name);
-                    
-                    // 소스 textarea 업데이트
-                    this.sourceTextarea.value = file.content.text;
-                    this.currentFile = file;
-                    
-                    // 상태 업데이트
-                    this.updateFileName(file.name);
-                    this.updateStatus('편집됨');
-                    
-                    // 자동 저장 표시
-                    this.showAutoSaved();
-                });
-                
-                // 에디터 준비 완료
-                this.stackedit.on('ready', () => {
-                    console.log('StackEdit 준비 완료');
-                    this.isReady = true;
-                    this.updateStatus('편집 가능');
-                });
             }
             
             setupEventListeners() {
                 // 툴바 버튼들
-                document.getElementById('newFileBtn').addEventListener('click', () => this.newFile());
-                document.getElementById('saveBtn').addEventListener('click', () => this.saveFile());
-                document.getElementById('exportHtmlBtn').addEventListener('click', () => this.exportHTML());
-                document.getElementById('exportMdBtn').addEventListener('click', () => this.exportMarkdown());
+                document.getElementById('initBtn').addEventListener('click', () => this.initStackEdit());
+                document.getElementById('refreshBtn').addEventListener('click', () => this.refreshStackEdit());
                 document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+                document.getElementById('downloadBtn').addEventListener('click', () => this.downloadContent());
                 
-                // 데모 파일 로드
-                document.querySelectorAll('.demo-file').forEach(btn => {
+                // 데모 버튼들
+                document.querySelectorAll('.demo-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => this.loadDemo(e.target.dataset.demo));
                 });
-                
-                // 소스 textarea 변경 감지 (역방향 동기화)
-                this.sourceTextarea.addEventListener('input', () => {
-                    if (this.isReady && this.stackedit) {
-                        // 디바운싱으로 너무 빈번한 업데이트 방지
-                        clearTimeout(this.syncTimeout);
-                        this.syncTimeout = setTimeout(() => {
-                            this.syncToStackEdit();
-                        }, 1000);
-                    }
-                });
             }
             
-            syncToStackEdit() {
-                if (this.stackedit && this.currentFile) {
-                    const updatedFile = {
-                        ...this.currentFile,
-                        content: {
-                            ...this.currentFile.content,
-                            text: this.sourceTextarea.value
-                        }
+            async initStackEdit() {
+                try {
+                    this.updateStatus('StackEdit 로딩 중...');
+                    this.showLoading(true);
+                    
+                    // 기존 iframe 제거
+                    if (this.iframe) {
+                        this.iframe.remove();
+                    }
+                    
+                    // 새 iframe 생성
+                    this.iframe = document.createElement('iframe');
+                    this.iframe.className = 'stackedit-iframe';
+                    this.iframe.src = 'https://stackedit.io/app#';
+                    this.iframe.title = 'StackEdit Editor';
+                    
+                    // iframe 로드 이벤트
+                    this.iframe.onload = () => {
+                        console.log('StackEdit iframe 로드 완료');
+                        setTimeout(() => {
+                            this.showLoading(false);
+                            this.isLoaded = true;
+                            this.updateStatus('StackEdit 준비 완료');
+                        }, 3000); // StackEdit이 완전히 로드될 시간
                     };
                     
-                    // StackEdit에 변경사항 반영
-                    this.stackedit.openFile(updatedFile);
-                }
-            }
-            
-            newFile() {
-                const fileName = `new_document_${Date.now()}.md`;
-                const newFile = {
-                    name: fileName,
-                    content: {
-                        text: '# 새 문서\n\n여기에 내용을 작성하세요...\n'
-                    },
-                    properties: {
-                        extensions: {
-                            katex: { enabled: true },
-                            mermaid: { enabled: true },
-                            emoji: { enabled: true }
-                        }
-                    }
-                };
-                
-                this.sourceTextarea.value = newFile.content.text;
-                if (this.stackedit) {
-                    this.stackedit.openFile(newFile);
-                }
-                this.updateFileName(fileName);
-                this.updateStatus('새 파일 생성됨');
-            }
-            
-            saveFile() {
-                if (this.currentFile) {
-                    // 브라우저 로컬 스토리지에 저장
-                    const savedFiles = JSON.parse(localStorage.getItem('stackedit-files') || '[]');
-                    const existingIndex = savedFiles.findIndex(f => f.name === this.currentFile.name);
+                    this.iframe.onerror = () => {
+                        console.error('StackEdit 로드 실패');
+                        this.showError('StackEdit을 로드할 수 없습니다. 인터넷 연결을 확인해주세요.');
+                    };
                     
-                    if (existingIndex >= 0) {
-                        savedFiles[existingIndex] = this.currentFile;
-                    } else {
-                        savedFiles.push(this.currentFile);
-                    }
+                    // iframe 추가
+                    this.iframeContainer.appendChild(this.iframe);
                     
-                    localStorage.setItem('stackedit-files', JSON.stringify(savedFiles));
-                    this.updateStatus('저장됨');
-                    this.showSaveConfirmation();
+                    // 버튼 상태 변경
+                    document.getElementById('initBtn').textContent = '✅ 로드됨';
+                    document.getElementById('initBtn').classList.add('active');
+                    
+                } catch (error) {
+                    console.error('StackEdit 초기화 실패:', error);
+                    this.showError('StackEdit 초기화에 실패했습니다.');
                 }
             }
             
-            exportHTML() {
-                if (this.currentFile && this.currentFile.content.html) {
-                    const html = this.generateCompleteHTML();
-                    this.downloadFile(html, this.currentFile.name.replace('.md', '.html'), 'text/html');
-                    this.updateStatus('HTML 내보내기 완료');
+            refreshStackEdit() {
+                if (this.iframe) {
+                    this.updateStatus('새로고침 중...');
+                    this.iframe.src = this.iframe.src; // 새로고침
+                    setTimeout(() => {
+                        this.updateStatus('새로고침 완료');
+                    }, 2000);
                 } else {
-                    alert('HTML 내용을 생성하기 위해 잠시 기다려주세요.');
+                    this.initStackEdit();
                 }
             }
             
-            exportMarkdown() {
-                if (this.currentFile) {
-                    this.downloadFile(this.currentFile.content.text, this.currentFile.name, 'text/markdown');
-                    this.updateStatus('Markdown 내보내기 완료');
+            toggleFullscreen() {
+                const container = document.querySelector('.editor-container');
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen().catch(err => {
+                        console.error('전체화면 실패:', err);
+                        alert('전체화면을 지원하지 않는 브라우저입니다.');
+                    });
+                } else {
+                    document.exitFullscreen();
                 }
             }
             
-            generateCompleteHTML() {
-                return `<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${this.currentFile.name}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            max-width: 800px; 
-            margin: 40px auto; 
-            padding: 20px; 
-            line-height: 1.6; 
-            color: #333;
-        }
-        .katex-display { margin: 1.5em 0; }
-        table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-        th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
-        th { background-color: #f5f5f5; font-weight: 600; }
-        code { background: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
-        pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; }
-        blockquote { border-left: 4px solid #ddd; margin: 1em 0; padding: 0 1em; color: #666; }
-        h1, h2, h3 { color: #2c3e50; }
-        a { color: #3498db; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-${this.currentFile.content.html || '<p>HTML 내용을 생성 중입니다...</p>'}
-</body>
-</html>`;
+            downloadContent() {
+                const content = this.sourceTextarea.value;
+                if (content.trim()) {
+                    this.downloadFile(content, 'document.md', 'text/markdown');
+                    this.updateStatus('다운로드 완료');
+                } else {
+                    alert('다운로드할 내용이 없습니다.');
+                }
             }
             
             downloadFile(content, filename, mimeType) {
@@ -611,51 +491,42 @@ ${this.currentFile.content.html || '<p>HTML 내용을 생성 중입니다...</p>
                 URL.revokeObjectURL(url);
             }
             
-            toggleFullscreen() {
-                const container = document.querySelector('.editor-container');
-                if (!document.fullscreenElement) {
-                    container.requestFullscreen().catch(err => {
-                        console.error('전체화면 실패:', err);
-                    });
-                } else {
-                    document.exitFullscreen();
-                }
-            }
-            
             loadDemo(demoType) {
                 const demos = {
                     welcome: `# 🎉 StackEdit에 오신 것을 환영합니다!
 
-이것은 **실제 StackEdit**이 웹페이지에 임베딩된 에디터입니다.
+이것은 **실제 StackEdit.io**를 iframe으로 직접 임베딩한 에디터입니다.
 
-## 🚀 주요 특징
+## 🚀 주요 기능
 
-- ✅ **실시간 동기화**: 오른쪽에서 편집하면 왼쪽 소스가 즉시 업데이트
-- ✅ **완전한 StackEdit**: 모든 원본 기능 지원
-- ✅ **KaTeX 수학**: $E = mc^2$ 완벽 지원
-- ✅ **Mermaid 다이어그램**: 모든 차트 타입 지원
-- ✅ **내보내기**: HTML, Markdown 파일 다운로드
+### ✨ 완전한 StackEdit 기능
+- 📝 실시간 마크다운 편집
+- 🧮 완전한 KaTeX 수학 지원
+- 📊 Mermaid 다이어그램
+- 💾 클라우드 동기화 (Google Drive, Dropbox, GitHub)
+- 🎨 테마 및 커스터마이징
+- 📤 다양한 내보내기 형식
 
-## 🎯 시작하기
+### 🎯 사용법
+1. 오른쪽 StackEdit에서 자유롭게 편집
+2. 파일 메뉴에서 새 문서 생성
+3. 동기화 설정으로 클라우드 연결
+4. 발행 기능으로 블로그에 게시
 
-1. 오른쪽 에디터에서 자유롭게 편집해보세요
-2. 왼쪽에서 실시간 소스 동기화를 확인하세요  
-3. 다른 데모 버튼들도 클릭해보세요!
+**이제 진짜 StackEdit의 모든 기능을 경험해보세요!** 🎨`,
 
-**즐거운 편집 되세요!** 🎨`,
-
-                    math: `# 🧮 수학 공식 데모
+                    math: `# 🧮 수학 공식 완전 가이드
 
 ## 기본 수식
 인라인 수식: $E = mc^2$, $\pi r^2$, $\alpha + \beta = \gamma$
 
-## 복잡한 수식
+## 고급 수식
 맥스웰 방정식:
 $$\\nabla \\times \\vec{\\mathbf{B}} -\\, \\frac1c\\, \\frac{\\partial\\vec{\\mathbf{E}}}{\\partial t} = \\frac{4\\pi}{c}\\vec{\\mathbf{j}}$$
 
 $$\\nabla \\cdot \\vec{\\mathbf{E}} = 4 \\pi \\rho$$
 
-## 행렬과 벡터
+## 행렬 연산
 $$\\begin{pmatrix}
 \\cos\\theta & -\\sin\\theta \\\\
 \\sin\\theta & \\cos\\theta
@@ -669,85 +540,272 @@ x\\cos\\theta - y\\sin\\theta \\\\
 x\\sin\\theta + y\\cos\\theta
 \\end{pmatrix}$$
 
-## 적분과 극한
+## 적분과 급수
 $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
-$$\\lim_{n \\to \\infty} \\left(1 + \\frac{1}{n}\\right)^n = e$$
+$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$
 
-## 화학 공식
-$$\\ce{CO2 + C -> 2 CO}$$
+## 복소해석
+$$e^{i\\pi} + 1 = 0$$
 
-$$\\ce{Hg^2+ ->[I-] HgI2 ->[I-] [Hg^{II}I4]^2-}$$`,
+$$\\oint_C f(z) dz = 2\\pi i \\sum \\text{Res}(f, z_k)$$`,
 
-                    diagrams: `# 📊 다이어그램 데모
+                    diagrams: `# 📊 Mermaid 다이어그램 완전 가이드
 
 ## 플로우차트
 \`\`\`mermaid
 graph TD
-    A[프로젝트 시작] --> B{요구사항 분석}
-    B -->|명확함| C[설계 단계]
-    B -->|불명확함| D[추가 조사]
+    A[프로젝트 시작] --> B{요구사항 명확?}
+    B -->|Yes| C[설계 시작]
+    B -->|No| D[추가 분석]
     D --> B
-    C --> E[개발 시작]
+    C --> E[개발]
     E --> F[테스트]
-    F --> G{품질 검증}
-    G -->|통과| H[배포]
-    G -->|실패| E
+    F --> G{품질 OK?}
+    G -->|Yes| H[배포]
+    G -->|No| E
     H --> I[완료]
 \`\`\`
 
 ## 시퀀스 다이어그램
 \`\`\`mermaid
 sequenceDiagram
-    participant 사용자
-    participant 프론트엔드
-    participant API서버
-    participant 데이터베이스
+    participant U as 사용자
+    participant F as 프론트엔드
+    participant A as API 서버
+    participant D as 데이터베이스
     
-    사용자->>프론트엔드: 로그인 요청
-    프론트엔드->>API서버: 인증 요청
-    API서버->>데이터베이스: 사용자 조회
-    데이터베이스-->>API서버: 사용자 정보
-    API서버-->>프론트엔드: JWT 토큰
-    프론트엔드-->>사용자: 로그인 성공
+    U->>F: 로그인 요청
+    F->>A: 인증 API 호출
+    A->>D: 사용자 정보 조회
+    D-->>A: 사용자 데이터
+    A-->>F: JWT 토큰 발급
+    F-->>U: 로그인 성공
+\`\`\`
+
+## 클래스 다이어그램
+\`\`\`mermaid
+classDiagram
+    class Animal {
+        +String name
+        +int age
+        +makeSound()
+        +move()
+    }
+    class Dog {
+        +String breed
+        +bark()
+        +wagTail()
+    }
+    class Cat {
+        +String color
+        +meow()
+        +purr()
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
 \`\`\`
 
 ## 간트 차트
 \`\`\`mermaid
 gantt
-    title 웹 프로젝트 일정
+    title 웹 애플리케이션 개발 일정
     dateFormat  YYYY-MM-DD
+    
     section 기획
     요구사항 분석    :done, req, 2024-01-01, 2024-01-15
     UI/UX 설계      :done, design, after req, 20d
+    
     section 개발
-    프론트엔드 개발  :active, frontend, 2024-02-05, 45d
-    백엔드 개발      :backend, 2024-02-10, 40d
+    프론트엔드      :active, frontend, 2024-02-05, 45d
+    백엔드 개발     :backend, 2024-02-10, 40d
+    데이터베이스    :db, 2024-02-15, 25d
+    
     section 테스트
-    통합 테스트      :test, after frontend, 15d
-    배포 준비        :deploy, after test, 10d
+    단위 테스트     :test1, after frontend, 10d
+    통합 테스트     :test2, after backend, 15d
+    
+    section 배포
+    스테이징 배포   :deploy1, after test2, 5d
+    프로덕션 배포   :deploy2, after deploy1, 3d
 \`\`\``,
 
-                    tables: `# 📋 고급 표 데모
+                    tables: `# 📋 고급 표 사용법
 
 ## 기본 표
-| 기능 | StackEdit | 다른 에디터 | 점수 |
-|------|-----------|-------------|------|
-| KaTeX 지원 | ✅ 완전 지원 | ⚠️ 제한적 | 10/10 |
-| Mermaid | ✅ 모든 차트 | ❌ 미지원 | 10/10 |
-| 실시간 동기화 | ✅ 완벽 | ❌ 없음 | 10/10 |
-| 클라우드 동기화 | ✅ 지원 | ⚠️ 제한적 | 9/10 |
+| 항목 | 설명 | 상태 | 점수 |
+|------|------|------|------|
+| StackEdit | 최고의 마크다운 에디터 | ✅ 완성 | 10/10 |
+| KaTeX | 수학 공식 렌더링 | ✅ 완벽 | 10/10 |
+| Mermaid | 다이어그램 생성 | ✅ 지원 | 9/10 |
 
-## 정렬된 표
+## 정렬 표
 | 왼쪽 정렬 | 가운데 정렬 | 오른쪽 정렬 |
 |:----------|:----------:|----------:|
-| 텍스트 | 중앙 | 100 |
-| 긴 내용입니다 | 짧음 | 1,234 |
-| A | B | 99.9% |
+| 왼쪽 | 가운데 | 오른쪽 |
+| Left | Center | Right |
+| 1 | 2 | 3 |
 
-## 수식이 포함된 표
-| 공식 | 이름 | 응용 분야 |
-|------|------|-----------|
+## 수식 포함 표
+| 수학 공식 | 이름 | 분야 |
+|-----------|------|------|
 | $E = mc^2$ | 질량-에너지 등가성 | 상대성이론 |
 | $F = ma$ | 뉴턴의 제2법칙 | 고전역학 |
-| $V
+| $\\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}$ | 가우스 법칙 | 전자기학 |
+| $\\int_a^b f(x) dx$ | 정적분 | 미적분학 |
+
+## 복합 표
+| 언어 | 타입 | 특징 | 사용 예 |
+|------|------|------|-------|
+| **JavaScript** | 동적 | • 유연함<br>• 웹 표준<br>• 이벤트 기반 | 웹 개발 |
+| **Python** | 동적 | • 간결함<br>• 라이브러리 풍부<br>• AI/ML | 데이터 과학 |
+| **Java** | 정적 | • 객체지향<br>• 플랫폼 독립<br>• 엔터프라이즈 | 백엔드 개발 |`,
+
+                    features: `# ✨ StackEdit 모든 기능 데모
+
+## 🎨 텍스트 스타일링
+**굵은 글씨**, *이탤릭*, ~~취소선~~, \`인라인 코드\`
+
+> 인용문도 아름답게 표현됩니다.
+> 여러 줄 인용문도 가능합니다.
+
+## 📝 리스트
+### 순서 없는 리스트
+- 첫 번째 항목
+- 두 번째 항목
+  - 중첩 항목 1
+  - 중첩 항목 2
+- 세 번째 항목
+
+### 순서 있는 리스트
+1. 계획 수립
+2. 실행
+   1. 개발
+   2. 테스트
+3. 완료
+
+## 🔗 링크와 이미지
+[StackEdit 공식 사이트](https://stackedit.io/)
+
+![StackEdit Logo](https://stackedit.io/static/landing/stackedit-logo.svg)
+
+## 💻 코드 블록
+\`\`\`javascript
+// JavaScript 예제
+const editor = new StackEdit();
+editor.openFile({
+  name: 'demo.md',
+  content: { text: '# Hello StackEdit!' }
+});
+\`\`\`
+
+\`\`\`python
+# Python 예제
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2*np.pi, 100)
+y = np.sin(x)
+plt.plot(x, y)
+plt.show()
+\`\`\`
+
+## 🧮 고급 수학
+### 미적분학
+$$\\frac{d}{dx}\\int_{a(x)}^{b(x)} f(x,t) dt = f(x,b(x))b'(x) - f(x,a(x))a'(x) + \\int_{a(x)}^{b(x)} \\frac{\\partial f}{\\partial x}(x,t) dt$$
+
+### 선형대수
+$$\\det(A) = \\sum_{\\sigma \\in S_n} \\text{sgn}(\\sigma) \\prod_{i=1}^n a_{i,\\sigma(i)}$$
+
+### 확률론
+$$\\mathbb{P}(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}$$
+
+## 📊 복합 다이어그램
+\`\`\`mermaid
+graph TB
+    subgraph "Frontend"
+        A[React App]
+        B[Redux Store]
+        C[Components]
+    end
+    
+    subgraph "Backend"
+        D[Express Server]
+        E[API Routes]
+        F[Middleware]
+    end
+    
+    subgraph "Database"
+        G[MongoDB]
+        H[Collections]
+    end
+    
+    A --> B
+    B --> C
+    A --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+\`\`\`
+
+---
+
+**이것이 StackEdit의 진정한 힘입니다!** 🚀
+
+모든 기능을 자유롭게 사용해보세요. 파일 저장, 동기화, 발행까지 모든 것이 가능합니다!`
+                };
+                
+                if (demos[demoType]) {
+                    this.sourceTextarea.value = demos[demoType];
+                    this.updateStatus(`${demoType} 데모 로드됨`);
+                }
+            }
+            
+            showLoading(show) {
+                this.loadingScreen.style.display = show ? 'flex' : 'none';
+            }
+            
+            showError(message) {
+                this.loadingScreen.innerHTML = `
+                    <div class="error-message">
+                        <h4>⚠️ 오류 발생</h4>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            페이지 새로고침
+                        </button>
+                    </div>
+                `;
+                this.updateStatus('오류 발생');
+            }
+            
+            updateStatus(status) {
+                document.getElementById('editorStatus').textContent = status;
+                console.log('Status:', status);
+            }
+        }
+        
+        // 페이지 로드 완료 후 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Direct StackEdit Embed 초기화');
+            new DirectStackEditEmbed();
+        });
+        
+        // 전역 에러 핸들링
+        window.addEventListener('error', (e) => {
+            console.error('전역 에러:', e);
+        });
+        
+        // PostMessage API로 StackEdit과 통신 (실험적)
+        window.addEventListener('message', (event) => {
+            if (event.origin === 'https://stackedit.io') {
+                console.log('StackEdit에서 메시지:', event.data);
+                // StackEdit에서 오는 데이터 처리
+                if (event.data.type === 'fileChange') {
+                    document.getElementById('sourceTextarea').value = event.data.content || '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
